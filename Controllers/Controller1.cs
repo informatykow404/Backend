@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -8,8 +9,9 @@ public class Controller1 : Controller
 {
     // GET
     [HttpGet]
+    [Authorize]
     public IActionResult Index()
     {
-        return View();
+        return Ok("asddddddddddddddddd");
     }
 }
