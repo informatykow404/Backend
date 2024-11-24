@@ -4,5 +4,5 @@ namespace Backend.DataModels.Config;
 
 public class Secrets
 { 
-    public string SupaBaseSecret { get; set; }
+    public string JwtSecret { get; set; }
 }
