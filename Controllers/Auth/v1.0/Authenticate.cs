@@ -67,36 +67,35 @@ public class AuthenticateController : ControllerBase
     [Route("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
     {
-        var userExists = await _userManager.FindByNameAsync(model.Username);
-
-        Console.WriteLine("WOrks");
+        var userExists = await _userManager.FindByNameAsync(model.Username!);
+        
         Console.WriteLine(userExists);
         if (userExists != null)
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new Response { Status = "Error", Message = "User already exists!" });
-        Console.WriteLine("WOrks");
+
         User user = new()
         {
             Email = model.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
             UserName = model.Username,
-            Name = model.Username
+            Name = model.Username,
+            University = model.University!,
+            ScienceClubs = new List<ScienceClub> { }
         };
-        Console.WriteLine("WOrks");
+
         IdentityResult result;
         try
         {
-            Console.WriteLine("WOrks");
-            result = await _userManager.CreateAsync(user, model.Password);
+            result = await _userManager.CreateAsync(user, model.Password!);
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
         }
-
-        Console.WriteLine("WOrks");
-        foreach (var VARIABLE in result.Errors) Console.WriteLine(VARIABLE.Description);
+        
+        foreach (var variable in result.Errors) Console.WriteLine(variable.Description);
         if (!result.Succeeded)
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new Response
@@ -108,7 +107,7 @@ public class AuthenticateController : ControllerBase
     [Route("register-admin")]
     public async Task<IActionResult> RegisterAdmin([FromBody] RegisterModel model)
     {
-        var userExists = await _userManager.FindByNameAsync(model.Username);
+        var userExists = await _userManager.FindByNameAsync(model.Username!);
         if (userExists != null)
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new Response { Status = "Error", Message = "User already exists!" });
@@ -116,9 +115,11 @@ public class AuthenticateController : ControllerBase
         {
             Email = model.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
-            UserName = model.Username
+            UserName = model.Username,
+            University = model.University!,
+            ScienceClubs = new List<ScienceClub> { }
         };
-        var result = await _userManager.CreateAsync(user, model.Password);
+        var result = await _userManager.CreateAsync(user, model.Password!);
         if (!result.Succeeded)
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new Response
@@ -136,11 +137,11 @@ public class AuthenticateController : ControllerBase
 
     private JwtSecurityToken GetToken(List<Claim> authClaims)
     {
-        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Authentication:JwtSecret"]));
+        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Authentication:JwtSecret"]!));
         var token = new JwtSecurityToken(
             _configuration["Authentication:ValidIssuer"],
             _configuration["Authentication:ValidAudience"],
-            expires: DateTime.Now.AddHours(3),
+            expires: DateTime.Now.AddHours(3), //TODO: Discuss token expiration time
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
         );
@@ -159,6 +160,10 @@ public class RegisterModel
 
     [Required(ErrorMessage = "Password is required")]
     public string? Password { get; set; }
+
+    [Required(ErrorMessage = "University data is required")]
+    
+    public University? University { get; set; }
 }
 
 public class Response
