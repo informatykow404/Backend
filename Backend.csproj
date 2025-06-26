@@ -8,6 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="DataModels\**" />
+      <Content Remove="DataModels\**" />
+      <EmbeddedResource Remove="DataModels\**" />
+      <None Remove="DataModels\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
@@ -17,12 +24,8 @@
         </PackageReference>
         <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.1.2" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="DataModels\Config\" />
-      <Folder Include="Services\" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -30,10 +33,12 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         <CopyToPublishDirectory>Never</CopyToPublishDirectory>
       </Content>
-        <Content Update="Properties\config.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Repositories\Interfaces\" />
+      <Folder Include="Repositories\Implementations\" />
+      <Folder Include="Services\Interfaces\" />
     </ItemGroup>
 
 </Project>

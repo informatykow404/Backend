@@ -1,8 +1,11 @@
+using System.Configuration;
 using System.Text;
 using System.Text.Json;
 using Backend.DataModels.Config;
 using Backend.EntityFramework.Contexts;
 using Backend.EntityFramework.Models;
+using Backend.Services.Implementations;
+using Backend.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -86,6 +89,9 @@ public class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
+        builder.Services.AddTransient<IEmailSender, EmailSender>();
+        builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 
         var app = builder.Build();
 
