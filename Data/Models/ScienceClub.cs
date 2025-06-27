@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Backend.EntityFramework.Models;
+namespace Backend.Data.Models;
 
 public class ScienceClub
 {

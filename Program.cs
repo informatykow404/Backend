@@ -1,17 +1,18 @@
-using System.Configuration;
 using System.Text;
-using System.Text.Json;
-using Backend.DataModels.Config;
 using Backend.EntityFramework.Contexts;
-using Backend.EntityFramework.Models;
+using Backend.Data.Models;
 using Backend.Services.Implementations;
 using Backend.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
+using Backend.Repositories.Implementations;
+using Backend.Repositories.Interfaces;
+using Backend.Services.Interfaces;
+using Microsoft.OpenApi.Models;
 
 namespace Backend;
 
@@ -20,8 +21,38 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        builder = AddJwtService(builder);
+        builder = AddSwaggerConfig(builder);
+        builder = AddDbContext(builder);
+        builder = AddServices(builder);
 
-        builder.Services.AddScoped<IEmailSender, EmailSender>();
+        builder.Services.AddControllers();
+        builder.Services.AddRouting(options => options.LowercaseUrls = true);
+        builder.Services.AddEndpointsApiExplorer();
+
+        var app = builder.Build();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+
+        app.UseHttpsRedirection();
+
+        app.UseAuthentication();
+        
+        app.UseAuthorization();
+
+        app.MapControllers();
+
+        app.Run();
+    }
+
+    private static WebApplicationBuilder AddJwtService(WebApplicationBuilder builder)
+    {
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+
         //JWT AUTHORIZATION
         builder.Services.AddAuthorization();
 
@@ -31,11 +62,11 @@ public class Program
             .AddDefaultTokenProviders();
         // Adding Jwt Bearer
         builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(options =>
         {
             options.SaveToken = true;
             options.RequireHttpsMetadata = false;
@@ -45,73 +76,81 @@ public class Program
                 ValidateAudience = true,
                 ValidAudience = builder.Configuration["Authentication:ValidAudience"],
                 ValidIssuer = builder.Configuration["Authentication:ValidIssuer"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JsonSerializer.Deserialize<Secrets>(File.ReadAllText("Properties/secrets.json"),new JsonSerializerOptions()
-                    {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                    })
-                    ?.JwtSecret ?? throw new InvalidOperationException()))
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
             };
         });
 
-        /*builder.Services.AddAuthentication(options =>
+        return builder;
+    }
+
+    private static WebApplicationBuilder AddSwaggerConfig(WebApplicationBuilder builder)
+    {
+        builder.Services.AddSwaggerGen(c =>
         {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(o =>
-        {
-            o.TokenValidationParameters = new TokenValidationParameters
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                ValidateIssuerSigningKey = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JsonSerializer.Deserialize<Secrets>(File.ReadAllText("Properties/secrets.json"),new JsonSerializerOptions()
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "Bearer",
+                BearerFormat = "JWT"
+            });
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
                     {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                    })
-                    ?.JwtSecret ?? throw new InvalidOperationException())),
-                ValidAudience = builder.Configuration["Authentication:ValidAudience"],
-                ValidIssuer = builder.Configuration["Authentication:ValidIssuer"]
-            };
-        });*/
-        //DB context for entity framework
-        builder.Services.AddDbContext<DataContext>(options =>
-        {
-            options.UseNpgsql(JsonSerializer.Deserialize<Config.Config>(File.ReadAllText("Properties/config.json"),
-                    new JsonSerializerOptions()
-                    {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                    })
-                ?.DatabaseConnectionString);
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
         });
-//        builder.Services.AddIdentityCore<User>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
-        builder.Services.AddControllers();
-        builder.Services.AddRouting(options => options.LowercaseUrls = true);
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+
+        return builder;
+    }
+
+    private static WebApplicationBuilder AddDbContext(WebApplicationBuilder builder)
+    {
+        var postgreUrl = Environment.GetEnvironmentVariable("POSTGRE_URL");
+        var uri = new Uri(postgreUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.Port,
+            Database = uri.AbsolutePath.TrimStart('/'),
+            Username = userInfo[0],
+            Password = userInfo[1],
+            Pooling = true,
+            SslMode = SslMode.Require
+        };
+
+        builder.Services.AddDbContext<DataContext>(opts =>
+            opts.UseNpgsql(
+                npgsqlBuilder.ConnectionString,
+                sqlOpts => sqlOpts.EnableRetryOnFailure()
+            )
+        );
+
+        return builder;
+    }
+
+    private static WebApplicationBuilder AddServices(WebApplicationBuilder builder)
+    {
+        builder.Services
+          .AddScoped<IScienceClubRepository, ScienceClubRepository>()
+          .AddScoped<IUserRepository, UserRepository>()
+          .AddScoped<IScienceClubService, ScienceClubService>()
+          .AddScoped<IUserService, UserService>();
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 
-        var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
-
-        //app.MapIdentityApi<User>();
-        app.UseHttpsRedirection();
-
-        app.UseAuthentication();
-        
-        app.UseAuthorization();
-
-
-        app.MapControllers();
-
-        app.Run();
+        return builder;
     }
 }
