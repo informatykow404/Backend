@@ -130,8 +130,14 @@ public class AuthenticateController : ControllerBase
 
     private JwtSecurityToken GenerateJwtToken(IEnumerable<Claim> claims)
     {
+        // PRD
+        // var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+
+        // DEV (remove on PRD)
+        var jwtSecret = _configuration["JWT_SECRET"];
+
         var signingKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["Authentication:JwtSecret"]!));
+            Encoding.UTF8.GetBytes(jwtSecret));
 
         return new JwtSecurityToken(
             issuer: _configuration["Authentication:ValidIssuer"],

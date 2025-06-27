@@ -13,6 +13,7 @@ using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Backend;
 
@@ -51,7 +52,11 @@ public class Program
 
     private static WebApplicationBuilder AddJwtService(WebApplicationBuilder builder)
     {
-        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        // PRD
+        // var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+
+        // DEV (remove on PRD)
+        var jwtSecret = builder.Configuration["JWT_SECRET"];
 
         //JWT AUTHORIZATION
         builder.Services.AddAuthorization();
@@ -116,7 +121,12 @@ public class Program
 
     private static WebApplicationBuilder AddDbContext(WebApplicationBuilder builder)
     {
-        var postgreUrl = Environment.GetEnvironmentVariable("POSTGRE_URL");
+        // PRD
+        // var postgreUrl = Environment.GetEnvironmentVariable("POSTGRE_URL");
+
+        // DEV (remove on PRD)
+        var postgreUrl = builder.Configuration["POSTGRE_URL"];
+
         var uri = new Uri(postgreUrl);
         var userInfo = uri.UserInfo.Split(':');
         var npgsqlBuilder = new NpgsqlConnectionStringBuilder

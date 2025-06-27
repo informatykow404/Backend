@@ -5,6 +5,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <UserSecretsId>a1f5d4dc-f52c-4ea9-9285-ad8ed59fe78b</UserSecretsId>
+        <DockerfileContext>.</DockerfileContext>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,6 +25,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.1.2" />
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.6" />
