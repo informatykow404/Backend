@@ -8,6 +8,7 @@ on:
 
 env:
   POSTGRE_URL: ${{ secrets.POSTGRE_URL }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
   build-and-test:
