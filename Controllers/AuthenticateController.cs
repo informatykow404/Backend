@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Backend.Data.Models;
 using Backend.DTOs.Auth;
+using Backend.EntityFramework.Contexts;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -18,15 +19,18 @@ public class AuthenticateController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<User> _userManager;
+    private readonly DataContext _ctx;
 
     public AuthenticateController(
         UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        DataContext ctx)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
+        _ctx = ctx;
     }
 
     [HttpPost("login")]
@@ -91,6 +95,24 @@ public class AuthenticateController : ControllerBase
             Message = Labels.AuthenticateController_UserRegistered
         });
     }
+    
+    [HttpPost("Logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout([FromBody] LogoutDTO request)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            return BadRequest("Brak tokenu w żądaniu.");
+        
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null)
+            return Unauthorized();
+
+        var ok = await RevokeRefreshTokenAsync(request.RefreshToken, userId);
+        if (!ok)
+            return NotFound("Token nie istnieje, jest już unieważniony lub wygasł.");
+
+        return NoContent();
+    }
 
     [HttpPost("register-admin")]
     [Authorize(Roles = "Admin")]
@@ -152,5 +174,17 @@ public class AuthenticateController : ControllerBase
     {
         if (!await _roleManager.RoleExistsAsync(role))
             await _roleManager.CreateAsync(new IdentityRole(role));
+    }
+    
+    public async Task<bool> RevokeRefreshTokenAsync(string token, string userId)
+    {
+        var rt = await _ctx.RefreshTokens
+            .SingleOrDefaultAsync(x => x.Token == token && x.UserId == userId);
+        if (rt == null || rt.IsRevoked || rt.ExpiresAt < DateTime.UtcNow)
+            return false;
+
+        rt.IsRevoked = true;
+        await _ctx.SaveChangesAsync();
+        return true;
     }
 }
