@@ -12,6 +12,8 @@ public class DataContext : IdentityDbContext<User>
     public DbSet<ScienceClub> ScienceClubs { get; set; }
     public DbSet<ClubMember> ClubMembers { get; set; }
     public DbSet<University> Universities { get; set; }
+    
+    public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
     public DataContext(DbContextOptions<DataContext> options) : base(options)
     {

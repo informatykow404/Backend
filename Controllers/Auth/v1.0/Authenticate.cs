@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Backend.EntityFramework.Contexts;
 using Backend.EntityFramework.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +19,9 @@ public class AuthenticateController : ControllerBase
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<User> _userManager;
 
+    private readonly DataContext _context;
     public AuthenticateController(
+        DataContext context,
         UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration)
@@ -25,6 +29,7 @@ public class AuthenticateController : ControllerBase
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
+        _context = context;
     }
 
     [HttpPost]
@@ -38,8 +43,8 @@ public class AuthenticateController : ControllerBase
             var authClaims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.Name, user.UserName),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new(JwtRegisteredClaimNames.Email, user.Email),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), //why?    
+                new(JwtRegisteredClaimNames.Email, user.Email)
             };
             foreach (var VARIABLE in authClaims)
             {
@@ -63,6 +68,77 @@ public class AuthenticateController : ControllerBase
         return Unauthorized();
     }
 
+    
+    [HttpPost]
+    [Route("refresh")]
+    public async Task<IActionResult> Refresh()
+    {
+        string token = null;
+        
+        var refreshTokens = _context.RefreshTokens
+            .Where(u => u.Token == token)
+            .ToList();
+
+        if (refreshTokens.Count == 0)
+        {
+            return Unauthorized();
+        }
+
+        if (refreshTokens.Count > 1)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new Response { Status = "Error", Message = "Multiple tokens found!" });
+        }
+        
+        var user = await _userManager.FindByIdAsync(refreshTokens[0].UserId.ToString());
+
+        var newRefreshToken = new RefreshTokens()
+        {
+            UserId = new Guid(user.Id),
+            Token = GenerateRefreshToken(),
+            Expires = DateTime.Now.AddDays(14)
+        };
+        
+        await _context.RefreshTokens.AddAsync(newRefreshToken);
+        await _context.SaveChangesAsync();
+
+        {
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var authClaims = new List<Claim>
+            {
+                new(JwtRegisteredClaimNames.Name, user.UserName),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), //why?
+                new(JwtRegisteredClaimNames.Email, user.Email)
+            };
+            foreach (var VARIABLE in authClaims)
+            {
+                Console.WriteLine($"{VARIABLE.Type}  {VARIABLE.Value}");
+            }
+
+
+            foreach (var userRole in userRoles)
+            {
+                authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                Console.WriteLine($"Claim: {ClaimTypes.Role} {userRole}");
+            }
+            var securityToken = GetToken(authClaims);
+            return Ok(new
+            {
+                token = new JwtSecurityTokenHandler().WriteToken(securityToken),
+                expiration = securityToken.ValidTo,
+                refreshToken = newRefreshToken.Token,
+                refreshTokenExpiration = newRefreshToken.Expires
+            });
+        }
+
+
+        return Ok(new 
+        {
+            token = newRefreshToken.Token,
+            expiration = newRefreshToken.Expires//??
+        });
+    }
+
     [HttpPost]
     [Route("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
@@ -80,7 +156,7 @@ public class AuthenticateController : ControllerBase
             SecurityStamp = Guid.NewGuid().ToString(),
             UserName = model.Username,
             Name = model.Username,
-            University = model.University!,
+            //University = model.University!,
             ScienceClubs = new List<ScienceClub> { }
         };
 
@@ -103,6 +179,7 @@ public class AuthenticateController : ControllerBase
         return Ok(new Response { Status = "Success", Message = "User created successfully!" });
     }
 
+#if DEBUG
     [HttpPost]
     [Route("register-admin")]
     public async Task<IActionResult> RegisterAdmin([FromBody] RegisterModel model)
@@ -116,7 +193,7 @@ public class AuthenticateController : ControllerBase
             Email = model.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
             UserName = model.Username,
-            University = model.University!,
+            //University = model.University!,
             ScienceClubs = new List<ScienceClub> { }
         };
         var result = await _userManager.CreateAsync(user, model.Password!);
@@ -124,28 +201,39 @@ public class AuthenticateController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new Response
                     { Status = "Error", Message = "User creation failed! Please check user details and try again." });
-        if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
-            await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
+        if (!await _roleManager.RoleExistsAsync(UserRoles.SysAdmin))
+            await _roleManager.CreateAsync(new IdentityRole(UserRoles.SysAdmin));
         if (!await _roleManager.RoleExistsAsync(UserRoles.User))
             await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
-        if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
-            await _userManager.AddToRoleAsync(user, UserRoles.Admin);
-        if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
+        if (await _roleManager.RoleExistsAsync(UserRoles.SysAdmin))
+            await _userManager.AddToRoleAsync(user, UserRoles.SysAdmin);
+        if (await _roleManager.RoleExistsAsync(UserRoles.User))
             await _userManager.AddToRoleAsync(user, UserRoles.User);
         return Ok(new Response { Status = "Success", Message = "User created successfully!" });
     }
 
+#endif
+    
     private JwtSecurityToken GetToken(List<Claim> authClaims)
     {
         var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Authentication:JwtSecret"]!));
+        var tokenValidity = int.Parse(_configuration["Authentication:TokenExpirationInMinutes"]!);
         var token = new JwtSecurityToken(
             _configuration["Authentication:ValidIssuer"],
             _configuration["Authentication:ValidAudience"],
-            expires: DateTime.Now.AddHours(3), //TODO: Discuss token expiration time
+            expires: DateTime.Now.AddMinutes(tokenValidity), //TODO: 15 minutes, refresh 14 days
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
         );
         return token;
+    }
+    
+    private string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
     }
 }
 
@@ -161,9 +249,10 @@ public class RegisterModel
     [Required(ErrorMessage = "Password is required")]
     public string? Password { get; set; }
 
-    [Required(ErrorMessage = "University data is required")]
-    
-    public University? University { get; set; }
+    //TODO: reconsider using this
+    //[Required(ErrorMessage = "University data is required")]
+    //public University? University { get; set; }
+    //
 }
 
 public class Response
@@ -174,7 +263,9 @@ public class Response
 
 public class UserRoles
 {
-    public const string Admin = "Admin";
+    public const string SysAdmin = "SystemAdmin";
+    public const string OrgAdmin = "OrganizationAdmin";
+    public const string SysMod = "SystemModerator";
     public const string User = "User";
 }
 

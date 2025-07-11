@@ -81,7 +81,7 @@ public class Program
                     })
                 ?.DatabaseConnectionString);
         });
-//        builder.Services.AddIdentityCore<User>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
+        //builder.Services.AddIdentityCore<User>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
         builder.Services.AddControllers();
         builder.Services.AddRouting(options => options.LowercaseUrls = true);
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -89,8 +89,8 @@ public class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Backend API", Version = "v1" });
-
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Student-App Backend API", Version = "v0.1" });
+            
             // Dodanie obsługi JWT w Swagger UI
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {

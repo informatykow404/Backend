@@ -2,3 +2,5 @@
 /obj/
 /Properties/secrets.json
 /Migrations/
+/.idea/
+*.user
