@@ -12,4 +12,6 @@ public class DataContext : IdentityDbContext<User>
 
     public DbSet<User> Users { get; set; }
     public DbSet<ScienceClub> ScienceClubs { get; set; }
+    
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 }
