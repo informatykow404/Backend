@@ -2,11 +2,11 @@
 
 public class RefreshToken
 {
-    public string Id { get; set; }
-    public string UserId { get; set; }
-    public string Token { get; set; }
-    public DateTime Expires { get; set; }
-    public bool Valid { get; set; }
-    public User User { get; set; }
+    public required string Id { get; set; }
+    public required User User { get; set; }
+    public required string Token { get; set; }
+    public required DateTime Expires { get; set; }
+    public required bool Valid { get; set; }
+    
     
 }
