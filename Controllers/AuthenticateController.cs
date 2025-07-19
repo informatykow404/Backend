@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Backend.Data.Models;
 using Backend.DTOs.Auth;
+using Backend.Services.Implementations;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +19,7 @@ public class AuthenticateController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<User> _userManager;
+    private readonly RefreshTokenService _refreshTokenService;
 
     public AuthenticateController(
         UserManager<User> userManager,
@@ -27,6 +29,7 @@ public class AuthenticateController : ControllerBase
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
+        
     }
 
     [HttpPost("login")]
@@ -45,9 +48,11 @@ public class AuthenticateController : ControllerBase
             claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var token = GenerateJwtToken(claims);
+            var refreshToken = await _refreshTokenService.GenerateRefreshToken(user);
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token),
+                refreshToken,
                 expiration = token.ValidTo
             });
         }
