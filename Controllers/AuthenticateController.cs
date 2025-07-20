@@ -161,7 +161,7 @@ public class AuthenticateController : ControllerBase
         await _refreshTokenService.RemoveRefreshToken(request.RefreshToken);
         return Ok(new ResponseDTO { 
             Status = Labels.AuthenticateController_Success, 
-            Message = "Logout succesfuly" });
+            Message = "Logout successfully" });
     }
 
     [HttpPost("register-admin")]
