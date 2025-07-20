@@ -65,5 +65,26 @@ public class RefreshTokenService
     {
         return _configuration.GetValue<int>("JwtSettings:RefreshTokenLifetimeDays", 7);
     }
+    
+    public async Task RevokeRefreshToken(string refreshToken)
+    {
+        var token = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken);
+        if (token != null)
+        {
+            token.Valid = false;
+            _db.RefreshTokens.Update(token);
+            await _db.SaveChangesAsync();
+        }
+    }
+    
+    public async Task RemoveRefreshToken(string refreshToken)
+    {
+        var token = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken);
+        if (token != null)
+        {
+            _db.RefreshTokens.Remove(token);
+            await _db.SaveChangesAsync();
+        }
+    }
   
 }

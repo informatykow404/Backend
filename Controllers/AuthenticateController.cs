@@ -95,8 +95,7 @@ public class AuthenticateController : ControllerBase
                 var newAccessToken = GenerateJwtToken(claims);
                 var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user);
                 
-                //needed Milosz's function
-                //await _refreshTokenService.RevokeRefreshToken(request.RefreshToken);
+                await _refreshTokenService.RemoveRefreshToken(request.RefreshToken);
 
                 return Ok(new
                 {
@@ -148,6 +147,21 @@ public class AuthenticateController : ControllerBase
             Status = Labels.AuthenticateController_Success, 
             Message = Labels.AuthenticateController_UserRegistered
         });
+    }
+    
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenDTO request)
+    {
+        if (string.IsNullOrEmpty(request.RefreshToken))
+            return BadRequest(new ResponseDTO { 
+                Status = Labels.AuthenticateController_Error, 
+                Message = "Invalid request: Refresh token is required"
+            });
+
+        await _refreshTokenService.RemoveRefreshToken(request.RefreshToken);
+        return Ok(new ResponseDTO { 
+            Status = Labels.AuthenticateController_Success, 
+            Message = "Logout successfully" });
     }
 
     [HttpPost("register-admin")]
