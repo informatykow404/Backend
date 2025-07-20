@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Backend.Data.Models;
 using Backend.DTOs.Auth;
@@ -24,12 +25,13 @@ public class AuthenticateController : ControllerBase
     public AuthenticateController(
         UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        RefreshTokenService refreshTokenService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-        
+        _refreshTokenService =  refreshTokenService;
     }
 
     [HttpPost("login")]
@@ -61,6 +63,57 @@ public class AuthenticateController : ControllerBase
             Status = Labels.AuthenticateController_Unauthorized, 
             Message = Labels.AuthenticateController_InvalidCredentials });
     }
+
+   [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO request)
+        {
+            try
+            {
+                var storedRefreshToken = await _refreshTokenService.ValidateRefreshToken(request.RefreshToken);
+                
+                if (storedRefreshToken == null)
+                {
+                    return Unauthorized(new ResponseDTO 
+                    { 
+                        Status = Labels.AuthenticateController_Unauthorized, 
+                        Message = "Invalid or expired refresh token" 
+                    });
+                }
+
+                var user = storedRefreshToken.User;
+                var userRoles = await _userManager.GetRolesAsync(user);
+                
+                var claims = new List<Claim>
+                {
+                    new(JwtRegisteredClaimNames.Sub, user.UserName!),
+                    new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new(JwtRegisteredClaimNames.Email, user.Email!)
+                };
+                claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+                
+                var newAccessToken = GenerateJwtToken(claims);
+                var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user);
+                
+                //needed Milosz's function
+                //await _refreshTokenService.RevokeRefreshToken(request.RefreshToken);
+
+                return Ok(new
+                {
+                    token = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
+                    refreshToken = newRefreshToken,
+                    expiration = newAccessToken.ValidTo
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO 
+                { 
+                    Status = Labels.AuthenticateController_Error, 
+                    Message = "Error refreshing token" 
+                });
+            }
+        }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO request)
