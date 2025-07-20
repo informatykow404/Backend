@@ -68,7 +68,7 @@ public class RefreshTokenService
     
     public async Task RevokeRefreshToken(string refreshToken)
     {
-        var token = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken);
+        var token = await FindRefreshTokenByToken(refreshToken);
         if (token != null)
         {
             token.Valid = false;
