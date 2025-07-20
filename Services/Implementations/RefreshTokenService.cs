@@ -35,6 +35,15 @@ public class RefreshTokenService
         
         return refreshToken.Token;
     }
+
+    public async Task<RefreshToken?> ValidateRefreshToken(string refreshToken)
+    {
+        return await _db.RefreshTokens
+            .Include(r => r.User)
+            .FirstOrDefaultAsync(r => r.Token == refreshToken && r.Valid && r.Expires > DateTime.UtcNow);
+    }
+    
+    
 //function for generating secure token by generating and combining three GUID and hashing then converting hash back to GUID form
     private string GenerateSecureToken()
     {
