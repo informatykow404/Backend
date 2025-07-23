@@ -1,7 +1,10 @@
 ﻿using Backend.Data.Models;
+using Backend.DTOs.Auth;
+using Backend.Services.Implementations;
 using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
@@ -12,6 +15,7 @@ namespace Backend.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        
         public UserController(IUserService userService)
         {
             _userService = userService;
@@ -55,6 +59,22 @@ namespace Backend.Controllers
             var deleted = await _userService.DeleteAsync(guid, ct);
             if (!deleted) return NotFound();
             return NoContent();
+        }
+        
+        [HttpPost("DataModifier")]
+        [Authorize]
+        public async Task<IActionResult> DataModifier([FromBody] DataUpdateDTO request)
+        {
+            var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
+            var claim = token.FirstOrDefault(n => n.Type == "sub");
+            var actionOutcome = await _userService.ReplaceData(request, claim.Value);
+            if (actionOutcome.Item1)
+                return Ok(new ResponseDTO
+                {
+                    Status = Labels.AuthenticateController_Success,
+                    Message = actionOutcome.Item2
+                });
+            return BadRequest(actionOutcome.Item2);
         }
     }
 }

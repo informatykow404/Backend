@@ -23,20 +23,19 @@ public class AuthenticateController : ControllerBase
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<User> _userManager;
     private readonly RefreshTokenService _refreshTokenService;
-    private readonly DataContext _db;
+    
 
     public AuthenticateController(
         UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
-        RefreshTokenService refreshTokenService,
-        DataContext db)
+        RefreshTokenService refreshTokenService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
         _refreshTokenService =  refreshTokenService;
-        _db = db;
+        
     }
 
     [HttpPost("login")]
@@ -168,21 +167,6 @@ public class AuthenticateController : ControllerBase
             Status = Labels.AuthenticateController_Success, 
             Message = "Logout successfully" });
     }
-
-    [HttpPost("DataModifier")]
-    [Authorize]
-    public async Task<IActionResult> DataModifier([FromBody] RegisterDTO request)
-    {
-        var actionOutcome = await ReplaceData(request);
-        if (actionOutcome)
-            return Ok(new ResponseDTO
-            {
-                Status = Labels.AuthenticateController_Success,
-                Message = "Data changed successfully"
-            });
-        else
-            return BadRequest("Could not change data");
-    }
     
     [HttpPost("register-admin")]
     [Authorize(Roles = "Admin")]
@@ -246,14 +230,4 @@ public class AuthenticateController : ControllerBase
             await _roleManager.CreateAsync(new IdentityRole(role));
     }
     
-    public async Task<bool> ReplaceData(RegisterDTO data)
-    {
-        var user = await _db.UsersData.FirstOrDefaultAsync(r => r.Username == data.Username);
-        if (user == null) return false;
-        if (data.Username != null) user.Username = data.Username;
-        if (data.Email != null) user.Username = data.Email;
-        if (data.Password != null) user.Username = data.Password;
-        await _db.SaveChangesAsync();
-        return true;
-    }
 }

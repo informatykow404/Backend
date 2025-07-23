@@ -1,4 +1,5 @@
 ﻿using Backend.Data.Models;
+using Backend.DTOs.Auth;
 
 namespace Backend.Services.Interfaces
 {
@@ -9,5 +10,6 @@ namespace Backend.Services.Interfaces
         Task<User> CreateAsync(User user, CancellationToken ct = default);
         Task<bool> UpdateAsync(string guid, User user, CancellationToken ct = default);
         Task<bool> DeleteAsync(string guid, CancellationToken ct = default);
+        Task<(bool, string)> ReplaceData(DataUpdateDTO data, string username);
     }
 }
