@@ -25,7 +25,7 @@ namespace Backend.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
+        public async Task<IActionResult> GetById(string id, CancellationToken ct = default)
         {
             var club = await _scienceClubService.GetByIdAsync(id, ct);
             if (club is null) return NotFound();
@@ -41,7 +41,7 @@ namespace Backend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] ScienceClub club, CancellationToken ct = default)
+        public async Task<IActionResult> Update(string id, [FromBody] ScienceClub club, CancellationToken ct = default)
         {
             if (club is null) return BadRequest(Labels.ScienceClubController_InvalidInput);
             var updated = await _scienceClubService.UpdateAsync(id, club, ct);
@@ -50,7 +50,7 @@ namespace Backend.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
+        public async Task<IActionResult> Delete(string id, CancellationToken ct = default)
         {
             var deleted = await _scienceClubService.DeleteAsync(id, ct);
             if (!deleted) return NotFound();
