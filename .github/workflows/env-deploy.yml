@@ -1,0 +1,60 @@
+name: Deploy API on remote server
+
+on:
+  push:
+    branches:
+      - dev
+      - stage
+      - prod
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.event.inputs.target_env || github.ref_name }}
+
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+      HOST: ${{ vars.DEPLOY_HOST }}
+      USER: ${{ vars.DEPLOY_USER }}
+      PORT: ${{ vars.DEPLOY_PORT }}
+      APP_PORT: ${{ vars.API_PORT }}
+      POSTGRE_URL: ${{ secrets.POSTGRE_URL }}
+      PATH: ${{ vars.DEPLOY_PATH }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p $PORT $HOST >> ~/.ssh/known_hosts
+
+      - name: Copy files to server
+        run: |
+          rsync -avz -e "ssh -p $PORT" ./ $USER@$HOST:$PATH
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -p $PORT $USER@$HOST << EOF
+            cd $PATH
+            echo "APP_PORT=$APP_PORT" > .env
+            echo "POSTGRE_URL='$POSTGRE_URL'" >> .env
+            docker compose down || true
+            docker compose up -d --build
+          EOF
