@@ -32,7 +32,7 @@ jobs:
       PORT: ${{ vars.DEPLOY_PORT }}
       APP_PORT: ${{ vars.API_PORT }}
       POSTGRE_URL: ${{ secrets.POSTGRE_URL }}
-      PATH: ${{ vars.DEPLOY_PATH }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
 
     steps:
       - name: Checkout code
@@ -47,12 +47,12 @@ jobs:
 
       - name: Copy files to server
         run: |
-          rsync -avz -e "ssh -p $PORT" ./ $USER@$HOST:$PATH
+          rsync -avz -e "ssh -p $PORT" ./ $USER@$HOST:$DEPLOY_PATH
 
       - name: Deploy with Docker Compose
         run: |
           ssh -p $PORT $USER@$HOST << EOF
-            cd $PATH
+            cd $DEPLOY_PATH
             echo "APP_PORT=$APP_PORT" > .env
             echo "POSTGRE_URL='$POSTGRE_URL'" >> .env
             docker compose down || true
