@@ -19,7 +19,7 @@ namespace Backend.Services.Implementations
             return club;
         }
 
-        public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeleteAsync(string  id, CancellationToken ct = default)
         {
             var existing = await _scienceClubRepository.GetByIdAsync(id, ct);
             if (existing is null) return false;
@@ -34,12 +34,12 @@ namespace Backend.Services.Implementations
             return await _scienceClubRepository.GetAllAsync(ct);
         }
 
-        public async Task<ScienceClub?> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<ScienceClub?> GetByIdAsync(string id, CancellationToken ct = default)
         {
             return await _scienceClubRepository.GetByIdAsync(id, ct);
         }
 
-        public async Task<bool> UpdateAsync(int id, ScienceClub club, CancellationToken ct = default)
+        public async Task<bool> UpdateAsync(string id, ScienceClub club, CancellationToken ct = default)
         {
             var existing = await _scienceClubRepository.GetByIdAsync(id, ct);
             if (existing is null) return false;

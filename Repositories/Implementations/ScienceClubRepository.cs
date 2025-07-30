@@ -22,7 +22,7 @@ namespace Backend.Repositories.Implementations
                 .ToListAsync(ct);
         }
 
-        public async Task<ScienceClub?> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<ScienceClub?> GetByIdAsync(string id, CancellationToken ct = default)
         {
             return await _context.ScienceClubs
                 .FirstOrDefaultAsync(c => c.Id == id, ct);
