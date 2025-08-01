@@ -1,4 +1,5 @@
 ﻿using Backend.Data.Models;
+using Backend.DTOs.Auth;
 using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
@@ -51,5 +52,50 @@ namespace Backend.Services.Implementations
             await _userRepository.SaveChangesAsync(ct);
             return true;
         }
+
+        public async Task<GetInfoAboutUser> GetDataAboutUser(string username, CancellationToken ct = default)
+        {
+            //empty
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+                if (string.IsNullOrEmpty(username)) return null;
+                
+                var userinfo = await _userRepository.GetByUsernameAsync(username, ct);
+            
+                if (userinfo is null) return null;
+                ct.ThrowIfCancellationRequested();
+                
+
+                return new GetInfoAboutUser
+                {
+                    Id = userinfo.Id,
+                    PhoneNumber = userinfo.PhoneNumber,
+                    Email = userinfo.Email,
+                    UserName = userinfo.UserName,
+                    SystemRole = userinfo.SystemRole
+
+
+                };
+
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                
+                return null;
+            }
+            
+            
+            
+            
+            
+            
+        }
+        
+        
     }
 }

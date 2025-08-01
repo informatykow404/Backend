@@ -2,6 +2,7 @@
 using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
@@ -12,9 +13,11 @@ namespace Backend.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly ILogger<UserController> _logger;
         public UserController(IUserService userService)
         {
             _userService = userService;
+            _logger = _logger;
         }
 
         [HttpGet]
@@ -56,5 +59,42 @@ namespace Backend.Controllers
             if (!deleted) return NotFound();
             return NoContent();
         }
+        
+        
+        [HttpGet("GetUserByNickname")]
+        public async Task<IActionResult> GetUserByUsernameQuery([FromQuery] string username, CancellationToken ct = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    return BadRequest("Username parameter is required");
+                }
+
+                var userInfo = await _userService.GetDataAboutUser(username, ct);
+
+                if (userInfo == null)
+                {
+                    return NotFound(new { message = $"User with username '{username}' not found" });
+                }
+
+                return Ok(userInfo);
+            }
+            catch (OperationCanceledException)
+            {
+                return BadRequest("Operation was cancelled");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user data for username: {Username}", username);
+                return StatusCode(500, "Internal server error");
+            }
+        
+        
     }
+    
+   
+    }
+    
+    
 }
