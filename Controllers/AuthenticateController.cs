@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Backend.Data.Models;
+using Backend.Data.Models.Enums;
 using Backend.DTOs.Auth;
 using Backend.Services.Implementations;
 using Backend.Shared;
@@ -128,7 +129,8 @@ public class AuthenticateController : ControllerBase
             UserName = request.Username,
             Email = request.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
-            Name = request.Username
+            Name = request.Username,
+            SystemRole = SystemRoles.User
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
@@ -178,7 +180,8 @@ public class AuthenticateController : ControllerBase
         {
             UserName = request.Username,
             Email = request.Email,
-            SecurityStamp = Guid.NewGuid().ToString()
+            SecurityStamp = Guid.NewGuid().ToString(),
+            SystemRole = SystemRoles.Administrator
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);

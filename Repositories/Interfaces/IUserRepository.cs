@@ -10,5 +10,6 @@ namespace Backend.Repositories.Interfaces
         void Update(User user);
         void Remove(User user);
         Task<int> SaveChangesAsync(CancellationToken ct = default);
+        Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default);
     }
 }
