@@ -1,4 +1,5 @@
-﻿using Backend.Data.Models;
+﻿using System.Text.RegularExpressions;
+using Backend.Data.Models;
 using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
@@ -75,7 +76,7 @@ namespace Backend.Controllers
 
                 if (userInfo == null)
                 {
-                    return NotFound(new { message = $"User with username '{username}' not found" });
+                    return NotFound(new { message = $"User with this username  not found" });
                 }
 
                 return Ok(userInfo);
@@ -86,7 +87,9 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting user data for username: {Username}", username);
+                var safeUsername = Regex.Replace(username ?? "unknown", @"[^\w\.\-@]", "_");
+                safeUsername = safeUsername.Length > 30 ? safeUsername.Substring(0, 30) : safeUsername;
+                _logger.LogError(ex, "Error getting user data for username");
                 return StatusCode(500, "Internal server error");
             }
         
