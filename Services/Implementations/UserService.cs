@@ -3,15 +3,18 @@ using Backend.DTOs.Auth;
 using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Identity;
 
 namespace Backend.Services.Implementations
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        public UserService(IUserRepository userRepository)
+        private readonly UserManager<User> _userManager;
+        public UserService(IUserRepository userRepository, UserManager<User> userManager)
         {
             _userRepository = userRepository;
+            _userManager = userManager;
         }
         public async Task<User> CreateAsync(User user, CancellationToken ct = default)
         {
@@ -55,14 +58,16 @@ namespace Backend.Services.Implementations
 
         public async Task<GetInfoAboutUser?> GetDataAboutUser(string username, CancellationToken ct = default)
         {
-            //empty
+            
             try
             {
+                //empty
                 ct.ThrowIfCancellationRequested();
                 if (string.IsNullOrEmpty(username)) return null;
                 
                 var userinfo = await _userRepository.GetByUsernameAsync(username, ct);
-            
+                var roles = await _userManager.GetRolesAsync(userinfo);
+                var role = roles.FirstOrDefault();
                 if (userinfo is null) return null;
                 ct.ThrowIfCancellationRequested();
                 
@@ -73,7 +78,7 @@ namespace Backend.Services.Implementations
                     PhoneNumber = userinfo.PhoneNumber,
                     Email = userinfo.Email,
                     UserName = userinfo.UserName,
-                    SystemRole = userinfo.SystemRole
+                    Role = role
 
 
                 };

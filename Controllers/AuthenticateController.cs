@@ -130,7 +130,7 @@ public class AuthenticateController : ControllerBase
             Email = request.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
             Name = request.Username,
-            SystemRole = SystemRoles.User
+            
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
@@ -181,7 +181,7 @@ public class AuthenticateController : ControllerBase
             UserName = request.Username,
             Email = request.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
-            SystemRole = SystemRoles.Administrator
+            
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);

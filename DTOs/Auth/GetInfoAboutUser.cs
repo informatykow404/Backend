@@ -10,5 +10,5 @@ public class GetInfoAboutUser
   public string? Name { get; set; }
   public string? Surname { get; set; }
   public string? UserName { get; set; }
-  public SystemRoles SystemRole { get; set; }
+  public string? Role { get; set; }
 }
