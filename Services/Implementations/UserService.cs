@@ -53,7 +53,7 @@ namespace Backend.Services.Implementations
             return true;
         }
 
-        public async Task<GetInfoAboutUser> GetDataAboutUser(string username, CancellationToken ct = default)
+        public async Task<GetInfoAboutUser?> GetDataAboutUser(string username, CancellationToken ct = default)
         {
             //empty
             try
