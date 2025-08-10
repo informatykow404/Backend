@@ -22,17 +22,30 @@ namespace Backend.Services.Implementations
             var user = await _userRepository.GetByUsernameAsync(userName, ct);
             if (clubName != null) return (false, "The club with this name already exists.");
             if (user != null) return (false, "Could not find user.");
-            var clubData = new ScienceClub()
+            var id = Guid.NewGuid().ToString();
+            var scienceClub = new ScienceClub()
             {
-                Id = Guid.NewGuid().ToString(),
-                Name = club.Name,
-                Users = new List<User>
-                {
-                    user!
-                },
+                Id = id,
+                Name = club.Name!,
+                Users = new List<User> { user! },
                 status  = ClubStatus.Pending
             };
-            await _scienceClubRepository.AddAsync(clubData, ct);
+            var clubMember = new ClubMember()
+            {
+                Id = id,
+                User = user!,
+                Club = scienceClub,
+                Role = ScienceClubRole.President
+            };
+            var university = new University()
+            {
+                Id = id,
+                Name = club.Name!,
+                Location = null,
+                Description = null,
+                Clubs = new List<ScienceClub> { scienceClub }
+            };
+            await _scienceClubRepository.AddAsync(scienceClub, clubMember, university, ct);
             await _scienceClubRepository.SaveChangesAsync(ct);
             return (true, "The club is waiting for approval.");
         }

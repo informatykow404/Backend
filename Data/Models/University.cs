@@ -14,6 +14,6 @@ public class University
     
     public required string? Description { get; set; }
     
-    public required ICollection<ScienceClub> Clubs { get; set; } = new List<ScienceClub>();
+    public required ICollection<ScienceClub> Clubs { get; set; }
     
 }
