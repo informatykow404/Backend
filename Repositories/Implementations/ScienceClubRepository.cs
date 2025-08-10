@@ -1,4 +1,5 @@
-﻿using Backend.Data.Models;
+﻿using System.Linq.Expressions;
+using Backend.Data.Models;
 using Backend.EntityFramework.Contexts;
 using Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,11 @@ namespace Backend.Repositories.Implementations
         public async Task<int> SaveChangesAsync(CancellationToken ct = default)
         {
             return await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task<TEntity?> FindAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken ct = default) where TEntity : ScienceClub
+        {
+            return await _context.Set<TEntity>().FirstOrDefaultAsync(predicate, ct);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Backend.Data.Models;
+﻿using System.Linq.Expressions;
+using Backend.Data.Models;
 
 namespace Backend.Repositories.Interfaces
 {
@@ -10,5 +11,8 @@ namespace Backend.Repositories.Interfaces
         void Update(ScienceClub club);
         void Remove(ScienceClub club);
         Task<int> SaveChangesAsync(CancellationToken ct = default);
+
+        Task<TEntity?> FindAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken ct = default)
+            where TEntity : ScienceClub;
     }
 }

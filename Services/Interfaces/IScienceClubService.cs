@@ -1,4 +1,5 @@
 ﻿using Backend.Data.Models;
+using Backend.DTOs.ScienceClub;
 
 namespace Backend.Services.Interfaces
 {
@@ -6,7 +7,7 @@ namespace Backend.Services.Interfaces
     {
         Task<IEnumerable<ScienceClub>> GetAllAsync(CancellationToken ct = default);
         Task<ScienceClub?> GetByIdAsync(string id, CancellationToken ct = default);
-        Task<ScienceClub> CreateAsync(ScienceClub club, CancellationToken ct = default);
+        Task<(bool, string)> CreateAsync(CreateDTO club, string userName, CancellationToken ct = default);
         Task<bool> UpdateAsync(string id, ScienceClub club, CancellationToken ct = default);
         Task<bool> DeleteAsync(string id, CancellationToken ct = default);
     }
