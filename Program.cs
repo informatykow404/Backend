@@ -153,10 +153,11 @@ public class Program
     private static WebApplicationBuilder AddServices(WebApplicationBuilder builder)
     {
         builder.Services
-          .AddScoped<IScienceClubRepository, ScienceClubRepository>()
-          .AddScoped<IUserRepository, UserRepository>()
-          .AddScoped<IScienceClubService, ScienceClubService>()
-          .AddScoped<IUserService, UserService>();
+            .AddScoped<IScienceClubRepository, ScienceClubRepository>()
+            .AddScoped<IUserRepository, UserRepository>()
+            .AddScoped<IScienceClubService, ScienceClubService>()
+            .AddScoped<IUserService, UserService>()
+            .AddScoped<RefreshTokenService>();
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));

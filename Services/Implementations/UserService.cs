@@ -63,14 +63,14 @@ namespace Backend.Services.Implementations
             var message = string.Empty;
             var user = await _userManager.FindByNameAsync(username);
             if (user == null) return (false, "Couldn't find user");
-
-            if (string.IsNullOrWhiteSpace(data.Username) == false && await _userManager.FindByNameAsync(data.Username) != null) {
+            
+            if (string.IsNullOrWhiteSpace(data.Username) == false && _userManager.FindByNameAsync(data.Username).Result == null) {
                 await _userManager.SetUserNameAsync(user, data.Username);
                 message = message + "Username updated.";
             }
             else if (string.IsNullOrWhiteSpace(data.Username) == false) message = message + "This user name already exists.";
 
-            if (string.IsNullOrWhiteSpace(data.Email) == false && await _userManager.FindByNameAsync(data.Email) != null) {
+            if (string.IsNullOrWhiteSpace(data.Email) == false && _userManager.FindByNameAsync(data.Email).Result == null) {
                 await _userManager.SetEmailAsync(user, data.Email);
                 message = message + " Email updated.";
             }

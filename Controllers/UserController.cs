@@ -1,4 +1,5 @@
-﻿using Backend.Data.Models;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Backend.Data.Models;
 using Backend.DTOs.Auth;
 using Backend.Services.Implementations;
 using Backend.Services.Interfaces;
@@ -66,7 +67,7 @@ namespace Backend.Controllers
         public async Task<IActionResult> DataModifier([FromBody] DataUpdateDTO request)
         {
             var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
-            var claim = token.FirstOrDefault(n => n.Type == "sub");
+            var claim = token.FirstOrDefault(n => n.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
             var actionOutcome = await _userService.ReplaceData(request, claim.Value);
             if (actionOutcome.Item1)
                 return Ok(new ResponseDTO
