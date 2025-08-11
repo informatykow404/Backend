@@ -1,4 +1,6 @@
 ﻿using Backend.Data.Models;
+using Backend.DTOs.Auth;
+using Backend.DTOs.ScienceClub;
 using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
@@ -32,13 +34,13 @@ namespace Backend.Controllers
             return Ok(club);
         }
 
-        [HttpPost]
+        /*[HttpPost]
         public async Task<IActionResult> Create([FromBody] ScienceClub club, CancellationToken ct = default)
         {
             if (club is null) return BadRequest(Labels.ScienceClubController_InvalidInput);
             var createdClub = await _scienceClubService.CreateAsync(club, ct);
             return CreatedAtAction(nameof(GetById), new { id = createdClub.Id }, createdClub);
-        }
+        }*/
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] ScienceClub club, CancellationToken ct = default)
@@ -55,6 +57,19 @@ namespace Backend.Controllers
             var deleted = await _scienceClubService.DeleteAsync(id, ct);
             if (!deleted) return NotFound();
             return NoContent();
+        }
+        
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CreateScienceClub([FromBody] CreateDTO club, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(club.Name)) return BadRequest(Labels.ScienceClubController_InvalidInput);
+            var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
+            var claim = token.FirstOrDefault(n => n.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            var actionOutcome = await _scienceClubService.CreateAsync(club, claim.Value, ct);
+            if (actionOutcome.Item1)
+                return Ok(actionOutcome.Item2);
+            return BadRequest(actionOutcome.Item2);
         }
     }
 }

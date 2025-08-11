@@ -1,4 +1,6 @@
 ﻿using Backend.Data.Models;
+using Backend.Data.Models.Enums;
+using Backend.DTOs.ScienceClub;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
 
@@ -7,16 +9,44 @@ namespace Backend.Services.Implementations
     public class ScienceClubService : IScienceClubService
     {
         private readonly IScienceClubRepository _scienceClubRepository;
-        public ScienceClubService(IScienceClubRepository scienceClubRepository)
+        private readonly IUserRepository _userRepository;
+        public ScienceClubService(IScienceClubRepository scienceClubRepository, IUserRepository userRepository)
         {
             _scienceClubRepository = scienceClubRepository;
+            _userRepository = userRepository;
         }
 
-        public async Task<ScienceClub> CreateAsync(ScienceClub club, CancellationToken ct = default)
+        public async Task<(bool, string)> CreateAsync(CreateDTO club, string userName, CancellationToken ct = default)
         {
-            await _scienceClubRepository.AddAsync(club, ct);
+            var clubName = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Name == club.Name, ct);
+            var user = await _userRepository.GetByUsernameAsync(userName, ct);
+            if (clubName != null) return (false, "The club with this name already exists.");
+            if (user != null) return (false, "Could not find user.");
+            var scienceClub = new ScienceClub()
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = club.Name!,
+                Users = new List<User> { user! },
+                status  = ClubStatus.Pending
+            };
+            var clubMember = new ClubMember()
+            {
+                Id = Guid.NewGuid().ToString(),
+                User = user!,
+                Club = scienceClub,
+                Role = ScienceClubRole.President
+            };
+            var university = new University()
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "universityName",
+                Location = "",
+                Description = "",
+                Clubs = new List<ScienceClub> { scienceClub }
+            };
+            await _scienceClubRepository.AddAsync(scienceClub, clubMember, university, ct);
             await _scienceClubRepository.SaveChangesAsync(ct);
-            return club;
+            return (true, "The club is waiting for approval.");
         }
 
         public async Task<bool> DeleteAsync(string  id, CancellationToken ct = default)
@@ -52,4 +82,5 @@ namespace Backend.Services.Implementations
             return true;
         }
     }
+    
 }

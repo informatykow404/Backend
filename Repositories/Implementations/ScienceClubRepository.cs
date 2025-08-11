@@ -1,4 +1,5 @@
-﻿using Backend.Data.Models;
+﻿using System.Linq.Expressions;
+using Backend.Data.Models;
 using Backend.EntityFramework.Contexts;
 using Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +11,11 @@ namespace Backend.Repositories.Implementations
         private readonly DataContext _context;
         public ScienceClubRepository(DataContext context) => _context = context;
 
-        public async Task AddAsync(ScienceClub club, CancellationToken ct = default)
+        public async Task AddAsync(ScienceClub scienceClub, ClubMember clubMember, University university,CancellationToken ct = default)
         {
-            await _context.ScienceClubs.AddAsync(club, ct);
+            await _context.ScienceClubs.AddAsync(scienceClub, ct);
+            await _context.ClubMembers.AddAsync(clubMember, ct);
+            await _context.Universities.AddAsync(university, ct);
         }
 
         public async Task<IEnumerable<ScienceClub>> GetAllAsync(CancellationToken ct = default)
@@ -41,6 +44,11 @@ namespace Backend.Repositories.Implementations
         public async Task<int> SaveChangesAsync(CancellationToken ct = default)
         {
             return await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task<TEntity?> FindAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken ct = default) where TEntity : ScienceClub
+        {
+            return await _context.Set<TEntity>().FirstOrDefaultAsync(predicate, ct);
         }
     }
 }
