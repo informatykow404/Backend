@@ -41,9 +41,14 @@ namespace Backend.Repositories.Implementations
             _context.Remove(club);
         }
 
-        public void Update(ScienceClub club)
+        public void UpdateScienceClub(ScienceClub club)
         {
            _context.ScienceClubs.Update(club);
+        }
+        
+        public void UpdateClubMember(ClubMember club)
+        {
+            _context.ClubMembers.Update(club);
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken ct = default)
@@ -54,6 +59,17 @@ namespace Backend.Repositories.Implementations
         public async Task<TEntity?> FindAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken ct = default) where TEntity : ScienceClub
         {
             return await _context.Set<TEntity>().FirstOrDefaultAsync(predicate, ct);
+        }
+
+        public async Task<ClubMember?> GetClubMemberByUserAsync(User user, string clubId, CancellationToken ct = default)
+        {
+            return await _context.ClubMembers.FirstOrDefaultAsync(c => c.User == user && c.Club.Id == clubId, ct);
+        }
+        
+        public async Task<ClubMember?> GetClubMemberByIdAsync(string id, string clubId, CancellationToken ct = default)
+        {
+            return await _context.ClubMembers.FirstOrDefaultAsync(c => c.Id == id && c.Club.Id == clubId, ct);
+            
         }
     }
 }

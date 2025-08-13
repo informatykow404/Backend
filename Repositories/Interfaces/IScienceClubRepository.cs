@@ -9,7 +9,10 @@ namespace Backend.Repositories.Interfaces
         Task<ScienceClub?> GetByIdAsync(string id, CancellationToken ct = default);
         Task AddClubAsync(ScienceClub scienceClub, ClubMember clubMember, University university,CancellationToken ct = default);
         Task JoinClubAsync(ClubMember clubMember, CancellationToken ct = default);
-        void Update(ScienceClub club);
+        Task<ClubMember?> GetClubMemberByUserAsync(User user, string clubId, CancellationToken ct = default);
+        Task<ClubMember?> GetClubMemberByIdAsync(string userId, string clubId, CancellationToken ct = default);
+        void UpdateScienceClub(ScienceClub club);
+        void UpdateClubMember(ClubMember club);
         void Remove(ScienceClub club);
         Task<int> SaveChangesAsync(CancellationToken ct = default);
 
