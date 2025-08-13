@@ -16,7 +16,7 @@ namespace Backend.Services.Implementations
             _userRepository = userRepository;
         }
 
-        public async Task<(bool, string)> CreateAsync(CreateDTO club, string userName, CancellationToken ct = default)
+        public async Task<(bool, string)> CreateClubAsync(CreateDTO club, string userName, CancellationToken ct = default)
         {
             var clubName = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Name == club.Name, ct);
             var user = await _userRepository.GetByUsernameAsync(userName, ct);
@@ -44,9 +44,29 @@ namespace Backend.Services.Implementations
                 Description = "",
                 Clubs = new List<ScienceClub> { scienceClub }
             };
-            await _scienceClubRepository.AddAsync(scienceClub, clubMember, university, ct);
+            await _scienceClubRepository.AddClubAsync(scienceClub, clubMember, university, ct);
             await _scienceClubRepository.SaveChangesAsync(ct);
             return (true, "The club is waiting for approval.");
+        }
+        
+        public async Task<(bool, string)> JoinClubAsync(string id, string userName, CancellationToken ct = default)
+        {
+            var user = await _userRepository.GetByUsernameAsync(userName, ct);
+            if (user != null) return (false, "Could not find user.");
+            var club = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Id == id, ct);
+            if (club != null) return (false, "Could not find club.");
+            club!.Users!.Add(user!);
+            var clubMember = new ClubMember()
+            {
+                Id = Guid.NewGuid().ToString(),
+                User = user!,
+                Club = club,
+                Role = ScienceClubRole.User
+            };
+            await _scienceClubRepository.JoinClubAsync(clubMember, ct);
+            _scienceClubRepository.Update(club);
+            await _scienceClubRepository.SaveChangesAsync(ct);
+            return (true, "You successfully joined the club.");
         }
 
         public async Task<bool> DeleteAsync(string  id, CancellationToken ct = default)

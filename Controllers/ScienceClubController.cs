@@ -66,7 +66,19 @@ namespace Backend.Controllers
             if (string.IsNullOrWhiteSpace(club.Name)) return BadRequest(Labels.ScienceClubController_InvalidInput);
             var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
             var claim = token.FirstOrDefault(n => n.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-            var actionOutcome = await _scienceClubService.CreateAsync(club, claim.Value, ct);
+            var actionOutcome = await _scienceClubService.CreateClubAsync(club, claim.Value, ct);
+            if (actionOutcome.Item1)
+                return Ok(actionOutcome.Item2);
+            return BadRequest(actionOutcome.Item2);
+        }
+        
+        [HttpGet("{id}/Join")]
+        [Authorize]
+        public async Task<IActionResult> JoinScienceClub([FromRoute] string id, CancellationToken ct = default)
+        {
+            var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
+            var claim = token.FirstOrDefault(n => n.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            var actionOutcome = await _scienceClubService.JoinClubAsync(id, claim.Value, ct);
             if (actionOutcome.Item1)
                 return Ok(actionOutcome.Item2);
             return BadRequest(actionOutcome.Item2);

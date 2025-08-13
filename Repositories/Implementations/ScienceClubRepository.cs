@@ -11,11 +11,16 @@ namespace Backend.Repositories.Implementations
         private readonly DataContext _context;
         public ScienceClubRepository(DataContext context) => _context = context;
 
-        public async Task AddAsync(ScienceClub scienceClub, ClubMember clubMember, University university,CancellationToken ct = default)
+        public async Task AddClubAsync(ScienceClub scienceClub, ClubMember clubMember, University university,CancellationToken ct = default)
         {
             await _context.ScienceClubs.AddAsync(scienceClub, ct);
             await _context.ClubMembers.AddAsync(clubMember, ct);
             await _context.Universities.AddAsync(university, ct);
+        }
+        
+        public async Task JoinClubAsync(ClubMember clubMember, CancellationToken ct = default)
+        {
+            await _context.ClubMembers.AddAsync(clubMember, ct);
         }
 
         public async Task<IEnumerable<ScienceClub>> GetAllAsync(CancellationToken ct = default)
