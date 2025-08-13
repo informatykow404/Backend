@@ -42,5 +42,10 @@ namespace Backend.Repositories.Implementations
         {
             return await _context.SaveChangesAsync(ct);
         }
+
+        public async Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default)
+        {
+            return await _context.Users.Where(u=>u.UserName == username).FirstOrDefaultAsync(ct);
+        }
     }
 }
