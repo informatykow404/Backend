@@ -12,6 +12,7 @@ using Npgsql;
 using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
+using DotNetEnv;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Configuration;
 
@@ -21,6 +22,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        Env.Load();
         var builder = WebApplication.CreateBuilder(args);
         builder = AddJwtService(builder);
         builder = AddSwaggerConfig(builder);
@@ -158,10 +160,11 @@ public class Program
     private static WebApplicationBuilder AddServices(WebApplicationBuilder builder)
     {
         builder.Services
-          .AddScoped<IScienceClubRepository, ScienceClubRepository>()
-          .AddScoped<IUserRepository, UserRepository>()
-          .AddScoped<IScienceClubService, ScienceClubService>()
-          .AddScoped<IUserService, UserService>();
+            .AddScoped<IScienceClubRepository, ScienceClubRepository>()
+            .AddScoped<IUserRepository, UserRepository>()
+            .AddScoped<IScienceClubService, ScienceClubService>()
+            .AddScoped<IUserService, UserService>()
+            .AddScoped<RefreshTokenService>();
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
