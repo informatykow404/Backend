@@ -164,7 +164,8 @@ public class Program
             .AddScoped<IUserRepository, UserRepository>()
             .AddScoped<IScienceClubService, ScienceClubService>()
             .AddScoped<IUserService, UserService>()
-            .AddScoped<RefreshTokenService>();
+            .AddScoped<RefreshTokenService>()
+            .AddScoped<IJwtService, JwtService>();
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));

@@ -1,9 +1,15 @@
-﻿using System.Text.RegularExpressions;
+
+using System.IdentityModel.Tokens.Jwt;
+using Backend.DTOs.Auth;
+using Backend.Services.Implementations;
+using Microsoft.AspNetCore.Identity;
+using System.Text.RegularExpressions;
 using Backend.Data.Models;
 using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
+
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
@@ -14,8 +20,10 @@ namespace Backend.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+
         private readonly ILogger<UserController> _logger;
         public UserController(IUserService userService, ILogger<UserController> logger)
+
         {
             _userService = userService;
             _logger = logger;
@@ -61,6 +69,23 @@ namespace Backend.Controllers
             return NoContent();
         }
         
+
+        [HttpPost("DataModifier")]
+        [Authorize]
+        public async Task<IActionResult> DataModifier([FromBody] DataUpdateDTO request)
+        {
+            var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
+            var claim = token.FirstOrDefault(n => n.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            var actionOutcome = await _userService.ReplaceData(request, claim.Value);
+            if (actionOutcome.Item1)
+                return Ok(new ResponseDTO
+                {
+                    Status = Labels.AuthenticateController_Success,
+                    Message = actionOutcome.Item2 + ";Token:" + actionOutcome.Item3
+                });
+            return BadRequest(actionOutcome.Item2);
+        }
+
         
         [HttpGet("GetUserByNickname")]
         public async Task<IActionResult> GetUserByUsernameQuery([FromQuery] string username, CancellationToken ct = default)
@@ -94,8 +119,7 @@ namespace Backend.Controllers
             }
         
         
-    }
-    
+        }
    
     }
     

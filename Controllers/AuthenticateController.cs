@@ -5,11 +5,14 @@ using System.Text;
 using Backend.Data.Models;
 using Backend.Data.Models.Enums;
 using Backend.DTOs.Auth;
+using Backend.EntityFramework.Contexts;
 using Backend.Services.Implementations;
+using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Controllers;
@@ -22,17 +25,22 @@ public class AuthenticateController : ControllerBase
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<User> _userManager;
     private readonly RefreshTokenService _refreshTokenService;
+    private readonly IJwtService _jwtService;
+    
 
     public AuthenticateController(
         UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager,
         IConfiguration configuration,
-        RefreshTokenService refreshTokenService)
+        RefreshTokenService refreshTokenService,
+        IJwtService jwtService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
         _refreshTokenService =  refreshTokenService;
+        _jwtService = jwtService;
+
     }
 
     [HttpPost("login")]
@@ -50,7 +58,7 @@ public class AuthenticateController : ControllerBase
             };
             claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-            var token = GenerateJwtToken(claims);
+            var token = _jwtService.GenerateJwtToken(claims);
             var refreshToken = await _refreshTokenService.GenerateRefreshToken(user);
             return Ok(new
             {
@@ -93,7 +101,7 @@ public class AuthenticateController : ControllerBase
                 claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
 
                 
-                var newAccessToken = GenerateJwtToken(claims);
+                var newAccessToken = _jwtService.GenerateJwtToken(claims);
                 var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user);
                 
                 await _refreshTokenService.RemoveRefreshToken(request.RefreshToken);
@@ -165,7 +173,7 @@ public class AuthenticateController : ControllerBase
             Status = Labels.AuthenticateController_Success, 
             Message = "Logout successfully" });
     }
-
+    
     [HttpPost("register-admin")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RegisterAdmin([FromBody] RegisterDTO request)
@@ -203,29 +211,12 @@ public class AuthenticateController : ControllerBase
         });
     }
 
-    private JwtSecurityToken GenerateJwtToken(IEnumerable<Claim> claims)
-    {
-        // PRD
-        // var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
-
-        // DEV (remove on PRD)
-        var jwtSecret = _configuration["JWT_SECRET"];
-
-        var signingKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSecret));
-
-        return new JwtSecurityToken(
-            issuer: _configuration["Authentication:ValidIssuer"],
-            audience: _configuration["Authentication:ValidAudience"],
-            expires: DateTime.UtcNow.AddHours(3),
-            claims: claims,
-            signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
-        );
-    }
+    
 
     private async Task EnsureRoleExists(string role)
     {
         if (!await _roleManager.RoleExistsAsync(role))
             await _roleManager.CreateAsync(new IdentityRole(role));
     }
+    
 }

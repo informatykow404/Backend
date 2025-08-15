@@ -1,5 +1,9 @@
-﻿using Backend.Data.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Backend.EntityFramework.Contexts;
+using Backend.Data.Models;
 using Backend.DTOs.Auth;
+
 using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
@@ -11,10 +15,12 @@ namespace Backend.Services.Implementations
     {
         private readonly IUserRepository _userRepository;
         private readonly UserManager<User> _userManager;
-        public UserService(IUserRepository userRepository, UserManager<User> userManager)
+        private readonly IJwtService _jwtService;
+        public UserService(IUserRepository userRepository, UserManager<User> userManager, IJwtService jwtService)
         {
             _userRepository = userRepository;
             _userManager = userManager;
+            _jwtService = jwtService;
         }
         public async Task<User> CreateAsync(User user, CancellationToken ct = default)
         {
@@ -55,6 +61,66 @@ namespace Backend.Services.Implementations
             await _userRepository.SaveChangesAsync(ct);
             return true;
         }
+
+        
+        public async Task<(bool, string, JwtSecurityToken)> ReplaceData(DataUpdateDTO data, string username)
+        {
+            var message = string.Empty;
+            var user = await _userManager.FindByNameAsync(username);
+            if (user == null) return (false, "Couldn't find user", null)!;
+            
+            if (string.IsNullOrWhiteSpace(data.Username) == false && _userManager.FindByNameAsync(data.Username).Result == null) {
+                await _userManager.SetUserNameAsync(user, data.Username);
+                message = message + "Username updated.";
+            }
+            else if (string.IsNullOrWhiteSpace(data.Username) == false) message = message + "This user name already exists.";
+
+            if (string.IsNullOrWhiteSpace(data.Email) == false && _userManager.FindByNameAsync(data.Email).Result == null) {
+                await _userManager.SetEmailAsync(user, data.Email);
+                message = message + " Email updated.";
+            }
+            else if (string.IsNullOrWhiteSpace(data.Email) == false) message = message + " This email already exists.";
+            
+            if (string.IsNullOrWhiteSpace(data.PhoneNumber) == false) {
+                await _userManager.SetPhoneNumberAsync(user, data.PhoneNumber);
+                message = message + " Phone number updated.";
+            }
+            
+            if (string.IsNullOrWhiteSpace(data.Name) == false) {
+                user.Name = data.Name;
+                message = message + " Name updated.";
+            }
+            
+            if (string.IsNullOrWhiteSpace(data.Surname) == false) {
+                user.Surname = data.Surname;
+                message = message + " Surname updated.";
+            }
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return (false, "Couldn't update user", null)!;
+            
+            IList<string> userRoles;
+            if (string.IsNullOrWhiteSpace(data.Username) == true)
+            {
+                user = await _userManager.FindByNameAsync(username);
+                userRoles = await _userManager.GetRolesAsync(user);
+            }
+            else
+            {
+                user = await _userManager.FindByNameAsync(data.Username);
+                userRoles = await _userManager.GetRolesAsync(user);
+            }
+
+            var claims = new List<Claim>
+            {
+                new(JwtRegisteredClaimNames.Sub, user.UserName!),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Email, user.Email!)
+            };
+            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+            var accessToken = _jwtService.GenerateJwtToken(claims);
+            return (true, message, accessToken);
+        }
+        
 
         public async Task<GetInfoAboutUser?> GetDataAboutUser(string username, CancellationToken ct = default)
         {
@@ -100,7 +166,5 @@ namespace Backend.Services.Implementations
             
             
         }
-        
-        
     }
 }
