@@ -99,7 +99,7 @@ namespace Backend.Controllers
             return BadRequest(actionOutcome.Item2);
         }
         
-        [HttpPatch("{id}")]
+        [HttpPatch("{id}/modify-user-role")]
         [Authorize]
         public async Task<IActionResult> ModifyUserRole([FromRoute] string clubId, string userId, ScienceClubRole role, CancellationToken ct = default)
         {
