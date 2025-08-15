@@ -10,6 +10,7 @@ public class ScienceClub
     public virtual ICollection<User>? Users { get; set; }
 
     public required ClubStatus status;
+    public string Description { get; set; }
 
 
 
