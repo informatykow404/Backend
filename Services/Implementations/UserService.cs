@@ -1,4 +1,6 @@
-﻿using Backend.Data.Models;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Backend.Data.Models;
 using Backend.DTOs.Auth;
 using Backend.EntityFramework.Contexts;
 using Backend.Repositories.Implementations;
@@ -13,10 +15,12 @@ namespace Backend.Services.Implementations
     {
         private readonly IUserRepository _userRepository;
         private readonly UserManager<User> _userManager;
-        public UserService(IUserRepository userRepository, UserManager<User> userManager)
+        private readonly IJwtService _jwtService;
+        public UserService(IUserRepository userRepository, UserManager<User> userManager, IJwtService jwtService)
         {
             _userRepository = userRepository;
             _userManager = userManager;
+            _jwtService = jwtService;
         }
         public async Task<User> CreateAsync(User user, CancellationToken ct = default)
         {
@@ -58,11 +62,11 @@ namespace Backend.Services.Implementations
             return true;
         }
         
-        public async Task<(bool, string)> ReplaceData(DataUpdateDTO data, string username)
+        public async Task<(bool, string, JwtSecurityToken)> ReplaceData(DataUpdateDTO data, string username)
         {
             var message = string.Empty;
             var user = await _userManager.FindByNameAsync(username);
-            if (user == null) return (false, "Couldn't find user");
+            if (user == null) return (false, "Couldn't find user", null)!;
             
             if (string.IsNullOrWhiteSpace(data.Username) == false && _userManager.FindByNameAsync(data.Username).Result == null) {
                 await _userManager.SetUserNameAsync(user, data.Username);
@@ -90,10 +94,30 @@ namespace Backend.Services.Implementations
                 user.Surname = data.Surname;
                 message = message + " Surname updated.";
             }
-            
             var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded) return (false, "Couldn't update user");
-            return (true, message);
+            if (!result.Succeeded) return (false, "Couldn't update user", null)!;
+            
+            IList<string> userRoles;
+            if (string.IsNullOrWhiteSpace(data.Username) == true)
+            {
+                user = await _userManager.FindByNameAsync(username);
+                userRoles = await _userManager.GetRolesAsync(user);
+            }
+            else
+            {
+                user = await _userManager.FindByNameAsync(data.Username);
+                userRoles = await _userManager.GetRolesAsync(user);
+            }
+
+            var claims = new List<Claim>
+            {
+                new(JwtRegisteredClaimNames.Sub, user.UserName!),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Email, user.Email!)
+            };
+            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+            var accessToken = _jwtService.GenerateJwtToken(claims);
+            return (true, message, accessToken);
         }
         
     }

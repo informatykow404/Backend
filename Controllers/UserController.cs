@@ -73,7 +73,7 @@ namespace Backend.Controllers
                 return Ok(new ResponseDTO
                 {
                     Status = Labels.AuthenticateController_Success,
-                    Message = actionOutcome.Item2
+                    Message = actionOutcome.Item2 + ";Token:" + actionOutcome.Item3
                 });
             return BadRequest(actionOutcome.Item2);
         }
