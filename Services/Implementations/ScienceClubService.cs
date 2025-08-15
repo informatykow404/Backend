@@ -96,6 +96,22 @@ namespace Backend.Services.Implementations
             await _scienceClubRepository.SaveChangesAsync(ct);
             return (true, "You have successfully updated the user role.");
         }
+        
+        public async Task<(bool, string)> ModifyScienceClubAsync(string clubId, DescriptionDTO description, string userName, CancellationToken ct = default)
+        {
+            var user = await _userRepository.GetByUsernameAsync(userName, ct);
+            if (user == null) return (false, "Could not find user.");
+            var clubMemberData = await _scienceClubRepository.GetClubMemberByUserAsync(user, clubId, ct);
+            if (clubMemberData == null) return (false, "Could not find user in this club.");
+            if (clubMemberData.Role != ScienceClubRole.President && clubMemberData.Role != ScienceClubRole.Admin) return (false, "");
+            var scienceClub = await _scienceClubRepository.GetByIdAsync(clubId, ct);
+            if (scienceClub == null) return (false, "Could not find club.");
+            scienceClub.Name = description.Name;
+            scienceClub.Description = description.Description;
+            _scienceClubRepository.UpdateScienceClub(scienceClub);
+            await _scienceClubRepository.SaveChangesAsync(ct);
+            return (true, "You have successfully modified the club.");
+        }
 
         public async Task<bool> DeleteAsync(string  id, CancellationToken ct = default)
         {

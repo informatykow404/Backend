@@ -12,6 +12,7 @@ namespace Backend.Services.Interfaces
         Task<(bool, string)> JoinClubAsync(string id, string userName, CancellationToken ct = default);
         Task<(bool, string, ICollection<User>)> GetUsersAsync(string id, string userName, CancellationToken ct = default);
         Task<(bool, string)> ModifyUserRoleAsync(string clubId, string userId, ScienceClubRole role, string userName, CancellationToken ct = default);
+        Task<(bool, string)> ModifyScienceClubAsync(string clubId, DescriptionDTO description, string userName, CancellationToken ct = default);
         Task<bool> UpdateAsync(string id, ScienceClub club, CancellationToken ct = default);
         Task<bool> DeleteAsync(string id, CancellationToken ct = default);
     }
