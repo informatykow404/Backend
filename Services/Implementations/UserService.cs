@@ -1,13 +1,13 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Backend.EntityFramework.Contexts;
 using Backend.Data.Models;
 using Backend.DTOs.Auth;
-using Backend.EntityFramework.Contexts;
+
 using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
-
 
 namespace Backend.Services.Implementations
 {
@@ -61,6 +61,7 @@ namespace Backend.Services.Implementations
             await _userRepository.SaveChangesAsync(ct);
             return true;
         }
+
         
         public async Task<(bool, string, JwtSecurityToken)> ReplaceData(DataUpdateDTO data, string username)
         {
@@ -120,5 +121,50 @@ namespace Backend.Services.Implementations
             return (true, message, accessToken);
         }
         
+
+        public async Task<GetInfoAboutUser?> GetDataAboutUser(string username, CancellationToken ct = default)
+        {
+            
+            try
+            {
+                //empty
+                ct.ThrowIfCancellationRequested();
+                if (string.IsNullOrEmpty(username)) return null;
+                
+                var userinfo = await _userRepository.GetByUsernameAsync(username, ct);
+                var roles = await _userManager.GetRolesAsync(userinfo);
+                var role = roles.FirstOrDefault();
+                if (userinfo is null) return null;
+                ct.ThrowIfCancellationRequested();
+                
+
+                return new GetInfoAboutUser
+                {
+                    Id = userinfo.Id,
+                    PhoneNumber = userinfo.PhoneNumber,
+                    Email = userinfo.Email,
+                    UserName = userinfo.UserName,
+                    Role = role
+
+
+                };
+
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                
+                return null;
+            }
+            
+            
+            
+            
+            
+            
+        }
     }
 }

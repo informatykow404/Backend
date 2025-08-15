@@ -12,6 +12,7 @@ using Npgsql;
 using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
+using DotNetEnv;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Configuration;
 
@@ -21,6 +22,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        Env.Load();
         var builder = WebApplication.CreateBuilder(args);
         builder = AddJwtService(builder);
         builder = AddSwaggerConfig(builder);
@@ -121,11 +123,16 @@ public class Program
 
     private static WebApplicationBuilder AddDbContext(WebApplicationBuilder builder)
     {
-        // PRD
-        // var postgreUrl = Environment.GetEnvironmentVariable("POSTGRE_URL");
-
-        // DEV (remove on PRD)
-        var postgreUrl = builder.Configuration["POSTGRE_URL"];
+        string envFilePath = ".env";
+        string postgreUrl;
+        if (File.Exists(envFilePath))
+        {
+            postgreUrl = Environment.GetEnvironmentVariable("POSTGRE_URL") ?? builder.Configuration["POSTGRE_URL"];
+        }
+        else
+        {
+            postgreUrl = builder.Configuration["POSTGRE_URL"];
+        }
 
         var uri = new Uri(postgreUrl);
         var userInfo = uri.UserInfo.Split(':');

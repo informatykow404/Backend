@@ -1,11 +1,15 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using Backend.Data.Models;
+
+using System.IdentityModel.Tokens.Jwt;
 using Backend.DTOs.Auth;
 using Backend.Services.Implementations;
+using Microsoft.AspNetCore.Identity;
+using System.Text.RegularExpressions;
+using Backend.Data.Models;
 using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http.HttpResults;
+
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
@@ -16,10 +20,13 @@ namespace Backend.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        
-        public UserController(IUserService userService)
+
+        private readonly ILogger<UserController> _logger;
+        public UserController(IUserService userService, ILogger<UserController> logger)
+
         {
             _userService = userService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -62,6 +69,7 @@ namespace Backend.Controllers
             return NoContent();
         }
         
+
         [HttpPost("DataModifier")]
         [Authorize]
         public async Task<IActionResult> DataModifier([FromBody] DataUpdateDTO request)
@@ -77,5 +85,43 @@ namespace Backend.Controllers
                 });
             return BadRequest(actionOutcome.Item2);
         }
+
+        
+        [HttpGet("GetUserByNickname")]
+        public async Task<IActionResult> GetUserByUsernameQuery([FromQuery] string username, CancellationToken ct = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    return BadRequest("Username parameter is required");
+                }
+
+                var userInfo = await _userService.GetDataAboutUser(username, ct);
+
+                if (userInfo == null)
+                {
+                    return NotFound(new { message = $"User with this username  not found" });
+                }
+
+                return Ok(userInfo);
+            }
+            catch (OperationCanceledException)
+            {
+                return BadRequest("Operation was cancelled");
+            }
+            catch (Exception ex)
+            {
+                var safeUsername = Regex.Replace(username ?? "unknown", @"[^\w\.\-@]", "_");
+                safeUsername = safeUsername.Length > 30 ? safeUsername.Substring(0, 30) : safeUsername;
+                _logger.LogError(ex, "Error getting user data for username");
+                return StatusCode(500, "Internal server error");
+            }
+        
+        
+        }
+   
     }
+    
+    
 }
