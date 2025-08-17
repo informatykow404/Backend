@@ -7,13 +7,9 @@ public class ScienceClub
     [Key]
     public required string Id { get; set; }
     public required string? Name { get; set; }
-    public virtual ICollection<User>? Users { get; set; }
 
     public required ClubStatus status;
     public string Description { get; set; }
-
-
-
 }
 
 

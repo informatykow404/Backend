@@ -1,46 +1,33 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Backend.Data.Models;
-using Backend.Data.Models.Enums;
 using Backend.DTOs.Auth;
-using Backend.EntityFramework.Contexts;
-using Backend.Services.Implementations;
 using Backend.Services.Interfaces;
 using Backend.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-
 namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthenticateController : ControllerBase
 {
-    private readonly IConfiguration _configuration;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<User> _userManager;
-    private readonly RefreshTokenService _refreshTokenService;
+    private readonly IRefreshTokenService _refreshTokenService;
     private readonly IJwtService _jwtService;
-    
 
     public AuthenticateController(
         UserManager<User> userManager,
         RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration,
-        RefreshTokenService refreshTokenService,
+        IRefreshTokenService refreshTokenService,
         IJwtService jwtService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
-        _configuration = configuration;
-        _refreshTokenService =  refreshTokenService;
+        _refreshTokenService = refreshTokenService;
         _jwtService = jwtService;
-
     }
 
     [HttpPost("login")]
@@ -68,67 +55,67 @@ public class AuthenticateController : ControllerBase
             });
         }
 
-        return Unauthorized(new ResponseDTO { 
-            Status = Labels.AuthenticateController_Unauthorized, 
+        return Unauthorized(new ResponseDTO {
+            Status = Labels.AuthenticateController_Unauthorized,
             Message = Labels.AuthenticateController_InvalidCredentials });
     }
 
-   [HttpPost("refresh")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO request)
+    [HttpPost("refresh")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO request)
+    {
+        try
         {
-            try
-            {
-                var storedRefreshToken = await _refreshTokenService.ValidateRefreshToken(request.RefreshToken);
-                
-                if (storedRefreshToken == null)
-                {
-                    return Unauthorized(new ResponseDTO 
-                    { 
-                        Status = Labels.AuthenticateController_Unauthorized, 
-                        Message = "Invalid or expired refresh token" 
-                    });
-                }
+            var storedRefreshToken = await _refreshTokenService.ValidateRefreshToken(request.RefreshToken);
 
-                var user = storedRefreshToken.User;
-                var userRoles = await _userManager.GetRolesAsync(user);
-                
-                var claims = new List<Claim>
+            if (storedRefreshToken == null)
+            {
+                return Unauthorized(new ResponseDTO
+                {
+                    Status = Labels.AuthenticateController_Unauthorized,
+                    Message = "Invalid or expired refresh token"
+                });
+            }
+
+            var user = storedRefreshToken.User;
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            var claims = new List<Claim>
                 {
                     new(JwtRegisteredClaimNames.Sub, user.UserName!),
                     new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     new(JwtRegisteredClaimNames.Email, user.Email!)
                 };
-                claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-                
-                var newAccessToken = _jwtService.GenerateJwtToken(claims);
-                var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user);
-                
-                await _refreshTokenService.RemoveRefreshToken(request.RefreshToken);
 
-                return Ok(new
-                {
-                    token = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
-                    refreshToken = newRefreshToken,
-                    expiration = newAccessToken.ValidTo
-                });
-            }
-            catch (Exception ex)
+            var newAccessToken = _jwtService.GenerateJwtToken(claims);
+            var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user);
+
+            await _refreshTokenService.RemoveRefreshToken(request.RefreshToken);
+
+            return Ok(new
             {
-                return StatusCode(500, new ResponseDTO 
-                { 
-                    Status = Labels.AuthenticateController_Error, 
-                    Message = "Error refreshing token" 
-                });
-            }
+                token = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
+                refreshToken = newRefreshToken,
+                expiration = newAccessToken.ValidTo
+            });
         }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ResponseDTO
+            {
+                Status = Labels.AuthenticateController_Error,
+                Message = "Error refreshing token"
+            });
+        }
+    }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO request)
     {
         if (await _userManager.FindByNameAsync(request.Username) is not null)
-            return BadRequest(new ResponseDTO { 
-                Status = Labels.AuthenticateController_Error, 
+            return BadRequest(new ResponseDTO {
+                Status = Labels.AuthenticateController_Error,
                 Message = Labels.AuthenticateController_UserAlreadyExists
             });
 
@@ -138,42 +125,67 @@ public class AuthenticateController : ControllerBase
             Email = request.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
             Name = request.Username,
-            
+
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
             var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-            return StatusCode(500, new ResponseDTO { 
-                Status = Labels.AuthenticateController_Error, 
+            return StatusCode(500, new ResponseDTO {
+                Status = Labels.AuthenticateController_Error,
                 Message = errors });
         }
 
         await EnsureRoleExists(Labels.AuthenticateController_UserRole);
         await _userManager.AddToRoleAsync(user, Labels.AuthenticateController_UserRole);
 
-        return Ok(new ResponseDTO { 
-            Status = Labels.AuthenticateController_Success, 
+        return Ok(new ResponseDTO {
+            Status = Labels.AuthenticateController_Success,
             Message = Labels.AuthenticateController_UserRegistered
         });
     }
-    
+
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] RefreshTokenDTO request)
     {
         if (string.IsNullOrEmpty(request.RefreshToken))
-            return BadRequest(new ResponseDTO { 
-                Status = Labels.AuthenticateController_Error, 
+            return BadRequest(new ResponseDTO {
+                Status = Labels.AuthenticateController_Error,
                 Message = "Invalid request: Refresh token is required"
             });
 
         await _refreshTokenService.RemoveRefreshToken(request.RefreshToken);
-        return Ok(new ResponseDTO { 
-            Status = Labels.AuthenticateController_Success, 
+        return Ok(new ResponseDTO {
+            Status = Labels.AuthenticateController_Success,
             Message = "Logout successfully" });
     }
-    
+
+    [HttpPost("logout-all")]
+    public async Task<IActionResult> LogoutAllDevices([FromBody] RefreshTokenDTO request)
+    {
+        var storedRefreshToken = await _refreshTokenService.ValidateRefreshToken(request.RefreshToken);
+
+        if (storedRefreshToken == null 
+         || storedRefreshToken.User == null
+         || storedRefreshToken.User.Id == null)
+        {
+            return Unauthorized(new ResponseDTO
+            {
+                Status = Labels.AuthenticateController_Unauthorized,
+                Message = Labels.AuthenticateController_InvalidToken
+            });
+        }                 
+
+        await _refreshTokenService.RemoveAllRefreshTokensForUser(storedRefreshToken.User.Id);
+
+        return Ok(new ResponseDTO
+        {
+            Status = Labels.AuthenticateController_Success,
+            Message = Labels.AuthenticateController_LogoutAll
+        });
+    }
+
     [HttpPost("register-admin")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RegisterAdmin([FromBody] RegisterDTO request)
@@ -211,12 +223,9 @@ public class AuthenticateController : ControllerBase
         });
     }
 
-    
-
     private async Task EnsureRoleExists(string role)
     {
         if (!await _roleManager.RoleExistsAsync(role))
             await _roleManager.CreateAsync(new IdentityRole(role));
     }
-    
 }

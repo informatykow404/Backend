@@ -26,7 +26,6 @@ namespace Backend.Services.Implementations
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = club.Name!,
-                Users = new List<User> { user },
                 status  = ClubStatus.Pending
             };
             var clubMember = new ClubMember()
@@ -55,7 +54,7 @@ namespace Backend.Services.Implementations
             if (user == null) return (false, "Could not find user.");
             var club = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Id == id, ct);
             if (club == null) return (false, "Could not find club.");
-            club.Users!.Add(user);
+
             var clubMember = new ClubMember()
             {
                 Id = Guid.NewGuid().ToString(),
@@ -69,16 +68,17 @@ namespace Backend.Services.Implementations
             return (true, "You have successfully joined the club.");
         }
         
-        public async Task<(bool, string, ICollection<User>)> GetUsersAsync(string id, string userName, CancellationToken ct = default)
+        public async Task<(bool, string)> GetUsersAsync(string id, string userName, CancellationToken ct = default)
         {
+            // TODO correct this method
             var user = await _userRepository.GetByUsernameAsync(userName, ct);
-            if (user == null) return (false, "Could not find user.", null)!;
+            if (user == null) return (false, "Could not find user.")!;
             var clubMemberData = await _scienceClubRepository.GetClubMemberByUserAsync(user, id, ct);
-            if (clubMemberData == null) return (false, "Could not find user in this club.", null)!;
-            if (clubMemberData.Role != ScienceClubRole.President && clubMemberData.Role != ScienceClubRole.Admin) return (false, "", null)!;
+            if (clubMemberData == null) return (false, "Could not find user in this club.")!;
+            if (clubMemberData.Role != ScienceClubRole.President && clubMemberData.Role != ScienceClubRole.Admin) return (false, "")!;
             var club = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Id == id, ct);
-            if (club == null) return (false, "Could not find club.", null)!;
-            return (true, "", club.Users)!;
+            if (club == null) return (false, "Could not find club.")!;
+            return (true, "")!;
         }
         
         public async Task<(bool, string)> ModifyUserRoleAsync(string clubId, string userId, ScienceClubRole role, string userName, CancellationToken ct = default)
@@ -139,7 +139,6 @@ namespace Backend.Services.Implementations
             if (existing is null) return false;
 
             existing.Name = club.Name;
-            existing.Users = club.Users;
 
             _scienceClubRepository.UpdateScienceClub(existing);
             await _scienceClubRepository.SaveChangesAsync(ct);

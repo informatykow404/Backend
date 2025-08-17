@@ -12,7 +12,7 @@ public class ClubMember
     
     public required ScienceClub Club { get; set; }
     
-   public ScienceClubRole Role { get; set; }
+    public ScienceClubRole Role { get; set; }
 }
 
 
