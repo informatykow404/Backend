@@ -129,6 +129,12 @@
   <data name="AuthenticateController_InvalidCredentials" xml:space="preserve">
     <value>Invalid credentials</value>
   </data>
+  <data name="AuthenticateController_InvalidToken" xml:space="preserve">
+    <value>Invalid Token</value>
+  </data>
+  <data name="AuthenticateController_LogoutAll" xml:space="preserve">
+    <value>Logout from all devices</value>
+  </data>
   <data name="AuthenticateController_PasswordRequired" xml:space="preserve">
     <value>Password is required</value>
   </data>
@@ -143,6 +149,9 @@
   </data>
   <data name="AuthenticateController_UserCreationFailed" xml:space="preserve">
     <value>User creation failed</value>
+  </data>
+  <data name="AuthenticateController_UserDoesNotExist" xml:space="preserve">
+    <value>User does not exist</value>
   </data>
   <data name="AuthenticateController_UserEmailRequired" xml:space="preserve">
     <value>User Email is required</value>

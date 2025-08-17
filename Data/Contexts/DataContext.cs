@@ -1,8 +1,6 @@
 using Backend.Data.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Backend.Data.Models; 
-using Backend.Data.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace Backend.EntityFramework.Contexts;
@@ -21,7 +19,6 @@ public class DataContext : IdentityDbContext<User>
     public DbSet<University> Universities { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -34,15 +31,11 @@ public class DataContext : IdentityDbContext<User>
         builder.Entity<IdentityUserLogin<string>>().ToTable("AspNetUserLogins", "auth");
         builder.Entity<IdentityUserToken<string>>().ToTable("AspNetUserTokens", "auth");
         builder.Entity<IdentityRoleClaim<string>>().ToTable("AspNetRoleClaims", "auth");
-        builder.Entity<RefreshToken>().ToTable("RefreshTokens", "auth");
-
-       
-        
+     
         //most_app
-        builder.Entity<ScienceClub>().ToTable("ScienceClub", "most_app");
-        builder.Entity<ClubMember>().ToTable("ClubMember", "most_app");
-        builder.Entity<University>().ToTable("University", "most_app");
-    }
-    
-    
+        builder.Entity<ScienceClub>().ToTable("ScienceClub");
+        builder.Entity<ClubMember>().ToTable("ClubMember");
+        builder.Entity<University>().ToTable("University");
+        builder.Entity<RefreshToken>().ToTable("RefreshTokens");
+    } 
 }

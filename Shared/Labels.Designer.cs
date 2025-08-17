@@ -97,6 +97,24 @@ namespace Backend.Shared {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid Token.
+        /// </summary>
+        internal static string AuthenticateController_InvalidToken {
+            get {
+                return ResourceManager.GetString("AuthenticateController_InvalidToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Logout from all devices.
+        /// </summary>
+        internal static string AuthenticateController_LogoutAll {
+            get {
+                return ResourceManager.GetString("AuthenticateController_LogoutAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Password is required.
         /// </summary>
         internal static string AuthenticateController_PasswordRequired {
@@ -138,6 +156,15 @@ namespace Backend.Shared {
         internal static string AuthenticateController_UserCreationFailed {
             get {
                 return ResourceManager.GetString("AuthenticateController_UserCreationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User does not exist.
+        /// </summary>
+        internal static string AuthenticateController_UserDoesNotExist {
+            get {
+                return ResourceManager.GetString("AuthenticateController_UserDoesNotExist", resourceCulture);
             }
         }
         

@@ -1,20 +1,21 @@
-using System.Text;
-using Backend.EntityFramework.Contexts;
 using Backend.Data.Models;
+using Backend.EntityFramework.Contexts;
+using Backend.Repositories.Implementations;
+using Backend.Repositories.Interfaces;
 using Backend.Services.Implementations;
+using Backend.Services.Interfaces;
 using Backend.Settings;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Npgsql;
-using Backend.Repositories.Implementations;
-using Backend.Repositories.Interfaces;
-using Backend.Services.Interfaces;
-using DotNetEnv;
-using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Npgsql;
+using System.Security.Claims;
+using System.Text;
 
 namespace Backend;
 
@@ -164,7 +165,7 @@ public class Program
             .AddScoped<IUserRepository, UserRepository>()
             .AddScoped<IScienceClubService, ScienceClubService>()
             .AddScoped<IUserService, UserService>()
-            .AddScoped<RefreshTokenService>()
+            .AddScoped<IRefreshTokenService, RefreshTokenService>()
             .AddScoped<IJwtService, JwtService>();
 
         builder.Services.AddTransient<IEmailSender, EmailSender>();

@@ -6,7 +6,5 @@ public class RefreshToken
     public required User User { get; set; }
     public required string Token { get; set; }
     public required DateTime Expires { get; set; }
-    public required bool Valid { get; set; }
-    
-    
+    public required bool Valid { get; set; }  
 }

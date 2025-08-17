@@ -85,19 +85,19 @@ namespace Backend.Controllers
             return BadRequest(actionOutcome.Item2);
         }
         
-        [HttpGet("{id}/get-users")]
-        [Authorize]
-        public async Task<IActionResult> GetUsers([FromRoute] string id, CancellationToken ct = default)
-        {
-            var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
-            var claim = token.FirstOrDefault(n => n.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-            var actionOutcome = await _scienceClubService.GetUsersAsync(id, claim.Value, ct);
-            if (actionOutcome.Item1)
-                return Ok(actionOutcome.Item3);
-            else if (actionOutcome is { Item1: false, Item2: "" })
-                return Unauthorized();
-            return BadRequest(actionOutcome.Item2);
-        }
+        //[HttpGet("{id}/get-users")]
+        //[Authorize]
+        //public async Task<IActionResult> GetUsers([FromRoute] string id, CancellationToken ct = default)
+        //{
+        //    var token =  HttpContext.User.Claims.Select(c => new { c.Type, c.Value });
+        //    var claim = token.FirstOrDefault(n => n.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        //    var actionOutcome = await _scienceClubService.GetUsersAsync(id, claim.Value);
+        //    if (actionOutcome.Item1)
+        //        return Ok(actionOutcome.Item3);
+        //    else if (actionOutcome is { Item1: false, Item2: "" })
+        //        return Unauthorized();
+        //    return BadRequest(actionOutcome.Item2);
+        //}
         
         [HttpPatch("{id}/modify-user-role")]
         [Authorize]

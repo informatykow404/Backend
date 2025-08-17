@@ -1,17 +1,14 @@
-﻿using System.Security.Claims;
+﻿using Backend.Data.Models;
+using Backend.EntityFramework.Contexts;
+using Backend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
-using Backend.Data.Models;
-using Backend.EntityFramework.Contexts;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Services.Implementations;
 
-public class RefreshTokenService
-{
-    
+public class RefreshTokenService : IRefreshTokenService
+{  
     private readonly DataContext _db;
     private readonly IConfiguration _configuration;
     public RefreshTokenService(DataContext db, IConfiguration configuration)
@@ -42,8 +39,7 @@ public class RefreshTokenService
             .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Token == refreshToken && r.Valid && r.Expires > DateTime.UtcNow);
     }
-    
-    
+       
 //function for generating secure token by generating and combining three GUID and hashing then converting hash back to GUID form
     private string GenerateSecureToken()
     {
@@ -86,5 +82,16 @@ public class RefreshTokenService
             await _db.SaveChangesAsync();
         }
     }
-  
+    
+    public async Task RemoveAllRefreshTokensForUser(string userId)
+    {
+        var tokens = await _db.RefreshTokens
+            .Where(r => r.User.Id == userId)
+            .ToListAsync();
+
+        if (tokens.Count == 0) return;
+
+        _db.RefreshTokens.RemoveRange(tokens);
+        await _db.SaveChangesAsync();
+    }
 }
