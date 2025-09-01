@@ -26,7 +26,8 @@ namespace Backend.Services.Implementations
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = club.Name!,
-                status  = ClubStatus.Pending
+                status  = ClubStatus.Pending,
+                UniversityId = club.UniversityId!,
             };
             var clubMember = new ClubMember()
             {
