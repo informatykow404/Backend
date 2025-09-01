@@ -8,8 +8,10 @@ public class ScienceClub
     public required string Id { get; set; }
     public required string? Name { get; set; }
 
-    public required ClubStatus status;
+    public required ClubStatus status { get; set; }
     public string Description { get; set; }
+    
+    public required string UniversityId { get; set; }
 }
 
 

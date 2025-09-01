@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Backend.Data.Models;
+using Backend.Data.Models.Enums;
 using Backend.EntityFramework.Contexts;
 using Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,14 @@ namespace Backend.Repositories.Implementations
             return await _context.ScienceClubs
                 .AsNoTracking()
                 .ToListAsync(ct);
+        }
+        
+        public async Task<IEnumerable<ScienceClub>> GetAllPendingClubsAsync(string universityId, CancellationToken ct = default)
+        {
+            return await _context.ScienceClubs
+                .AsNoTracking()
+                .Where(c => c.status == ClubStatus.Pending && c.UniversityId == universityId)
+                .ToListAsync(ct); 
         }
 
         public async Task<ScienceClub?> GetByIdAsync(string id, CancellationToken ct = default)

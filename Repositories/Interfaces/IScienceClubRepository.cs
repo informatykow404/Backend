@@ -8,6 +8,7 @@ namespace Backend.Repositories.Interfaces
         Task<IEnumerable<ScienceClub>> GetAllAsync(CancellationToken ct = default);
         Task<ScienceClub?> GetByIdAsync(string id, CancellationToken ct = default);
         Task AddClubAsync(ScienceClub scienceClub, ClubMember clubMember, University university,CancellationToken ct = default);
+        Task<IEnumerable<ScienceClub>> GetAllPendingClubsAsync(string universityId, CancellationToken ct = default);
         Task JoinClubAsync(ClubMember clubMember, CancellationToken ct = default);
         Task<ClubMember?> GetClubMemberByUserAsync(User user, string clubId, CancellationToken ct = default);
         Task<ClubMember?> GetClubMemberByIdAsync(string userId, string clubId, CancellationToken ct = default);
