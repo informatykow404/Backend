@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Controllers;
 
 [ApiController]
-/*[Authorize(Roles = "University, Admin")]*/
+[Authorize(Roles = "University, Admin")]
 [Route("api/[controller]")]
 public class UniversityController : ControllerBase
 {
@@ -27,7 +27,7 @@ public class UniversityController : ControllerBase
     }
     
     [HttpPatch("acceptClub/{id}")]
-    /*[Authorize]*/
+    [Authorize]
     public async Task<IActionResult> AcceptClub([FromRoute] string id, AcceptDTO approval, CancellationToken ct = default)
     {
         var actionOutcome = await _universityRepository.AcceptClubAsync(id, approval, ct);
