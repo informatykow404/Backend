@@ -10,23 +10,29 @@ namespace Backend.Services.Implementations
     {
         private readonly IScienceClubRepository _scienceClubRepository;
         private readonly IUserRepository _userRepository;
-        public ScienceClubService(IScienceClubRepository scienceClubRepository, IUserRepository userRepository)
+        private readonly IUniversityRepository _universityRepository;
+        public ScienceClubService(IScienceClubRepository scienceClubRepository, IUserRepository userRepository, IUniversityRepository universityRepository)
         {
             _scienceClubRepository = scienceClubRepository;
             _userRepository = userRepository;
+            _universityRepository = universityRepository;
         }
 
         public async Task<(bool, string)> CreateClubAsync(CreateDTO club, string userName, CancellationToken ct = default)
         {
-            var clubName = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Name == club.Name, ct);
+            var clubName = await _scienceClubRepository.GetByNameAsync(club.Name, ct);
             var user = await _userRepository.GetByUsernameAsync(userName, ct);
-            if (clubName == null) return (false, "The club with this name already exists.");
+            if (clubName != null) return (false, "The club with this name already exists.");
             if (user == null) return (false, "Could not find user.");
+            University university = await _universityRepository.GetUniversityByIdAsync(club.UniversityId, ct);
+            if(university == null)
+                return (false, "Could not find university with this Id.");
             var scienceClub = new ScienceClub()
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = club.Name!,
                 status  = ClubStatus.Pending,
+                Description = "",
                 UniversityId = club.UniversityId!,
             };
             var clubMember = new ClubMember()
@@ -36,15 +42,8 @@ namespace Backend.Services.Implementations
                 Club = scienceClub,
                 Role = ScienceClubRole.President
             };
-            var university = new University()
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = "universityName",
-                Location = "",
-                Description = "",
-                Clubs = new List<ScienceClub> { scienceClub }
-            };
-            await _scienceClubRepository.AddClubAsync(scienceClub, clubMember, university, ct);
+            university.Clubs.Add(scienceClub);
+            await _scienceClubRepository.AddClubAsync(scienceClub, clubMember, ct);
             await _scienceClubRepository.SaveChangesAsync(ct);
             return (true, "The club is waiting for approval.");
         }
@@ -53,7 +52,7 @@ namespace Backend.Services.Implementations
         {
             var user = await _userRepository.GetByUsernameAsync(userName, ct);
             if (user == null) return (false, "Could not find user.");
-            var club = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Id == id, ct);
+            var club = await _scienceClubRepository.GetByIdAsync(id, ct);
             if (club == null) return (false, "Could not find club.");
 
             var clubMember = new ClubMember()
@@ -77,7 +76,7 @@ namespace Backend.Services.Implementations
             var clubMemberData = await _scienceClubRepository.GetClubMemberByUserAsync(user, id, ct);
             if (clubMemberData == null) return (false, "Could not find user in this club.")!;
             if (clubMemberData.Role != ScienceClubRole.President && clubMemberData.Role != ScienceClubRole.Admin) return (false, "")!;
-            var club = await _scienceClubRepository.FindAsync<ScienceClub>(c => c.Id == id, ct);
+            var club = await _scienceClubRepository.GetByIdAsync(id, ct);
             if (club == null) return (false, "Could not find club.")!;
             return (true, "")!;
         }

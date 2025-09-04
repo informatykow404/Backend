@@ -45,4 +45,22 @@ public class UniversityService : IUniversityService
             return (true, "Successfully accepted the club");
         return (true, "Successfully changed the club status to inactive");
     }
+    
+    public async Task<(bool,string)> CreateUniversityAsync(CreateUniDTO uniData, CancellationToken ct = default)
+    {
+        University uni = await _universityRepository.GetUniversityByNameAsync(uniData.Name, ct);
+        if (uni != null)
+            return (false, "University with the given name already exists");
+        var university = new University()
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = uniData.Name!,
+            Location = uniData.Location!,
+            Description = uniData.Description!,
+            Clubs = new List<ScienceClub>()
+        };
+        await _universityRepository.AddUniversityAsync(university, ct);
+        await _universityRepository.SaveChangesAsync(ct);
+        return (true, "The university has been created");
+    }
 }
