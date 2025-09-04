@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Controllers;
 
 [ApiController]
-[Authorize(Roles = "University, Admin")]
+[Authorize(Roles = "Admin")]
 [Route("api/[controller]")]
 public class UniversityController : ControllerBase
 {
@@ -19,7 +19,7 @@ public class UniversityController : ControllerBase
     }
     
     [HttpGet("{id}")]
-    [Authorize]
+    [Authorize(Roles = "University")]
     public async Task<IActionResult> GetPendingClubs([FromRoute] string id, CancellationToken ct = default)
     {
         var actionOutcome = await _universityRepository.GetPendingClubsAsync(id, ct);
@@ -27,10 +27,20 @@ public class UniversityController : ControllerBase
     }
     
     [HttpPatch("acceptClub/{id}")]
-    [Authorize]
+    [Authorize(Roles = "University")]
     public async Task<IActionResult> AcceptClub([FromRoute] string id, AcceptDTO approval, CancellationToken ct = default)
     {
         var actionOutcome = await _universityRepository.AcceptClubAsync(id, approval, ct);
+        if (actionOutcome.Item1)
+            return Ok(actionOutcome.Item2);
+        return BadRequest(actionOutcome.Item2);
+    }
+    
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> CreateUniversity(CreateUniDTO uniData, CancellationToken ct = default)
+    {
+        var actionOutcome = await _universityRepository.CreateUniversityAsync(uniData, ct);
         if (actionOutcome.Item1)
             return Ok(actionOutcome.Item2);
         return BadRequest(actionOutcome.Item2);
