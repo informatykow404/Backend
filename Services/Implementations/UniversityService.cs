@@ -63,4 +63,34 @@ public class UniversityService : IUniversityService
         await _universityRepository.SaveChangesAsync(ct);
         return (true, "The university has been created");
     }
+    
+    public async Task<(bool,string)> UpdateUniversityAsync(string id, UpdateUniDTO uniData, CancellationToken ct = default)
+    {
+        University? uni = await _universityRepository.GetUniversityByNameAsync(uniData.Name, ct);
+        if (uni != null)
+            return (false, "University with the given name already exists. Please try again with a different name");
+        uni = await _universityRepository.GetUniversityByIdAsync(id, ct);
+        if (uni == null)
+            return (false, "Couldn't find the university with this Id");
+        string message = "";
+        if (!string.IsNullOrWhiteSpace(uniData.Description))
+        {
+            uni.Description = uniData.Description;
+            message += "Description updated. ";
+        }
+
+        if (!string.IsNullOrWhiteSpace(uniData.Location))
+        {
+            uni.Location = uniData.Location;
+            message += "Location updated. ";
+        }
+
+        if (!string.IsNullOrWhiteSpace(uniData.Name))
+        {
+            uni.Name = uniData.Name;
+            message += "Name updated. ";
+        }
+        await _universityRepository.SaveChangesAsync(ct);
+        return (true, message);
+    }
 }
