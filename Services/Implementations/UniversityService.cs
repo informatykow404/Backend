@@ -63,4 +63,16 @@ public class UniversityService : IUniversityService
         await _universityRepository.SaveChangesAsync(ct);
         return (true, "The university has been created");
     }
+    
+    public async Task<(bool,string)> RemoveUniversityAsync(string id, CancellationToken ct = default)
+    {
+        var university = await _universityRepository.GetUniversityByIdAsync(id, ct);
+        if (university is null) return (false, "University not found");
+        var scienceClubs = university.Clubs;
+        foreach (var scienceClub in scienceClubs)
+            _scienceClubRepository.Remove(scienceClub);
+        _universityRepository.RemoveUniversity(university);
+        await _universityRepository.SaveChangesAsync(ct);
+        return (true, "Successfully removed the university");
+    }
 }
