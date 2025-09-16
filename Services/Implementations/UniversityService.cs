@@ -1,8 +1,6 @@
 ﻿using Backend.Data.Models;
 using Backend.Data.Models.Enums;
 using Backend.DTOs.University;
-using Backend.EntityFramework.Contexts;
-using Backend.Repositories.Implementations;
 using Backend.Repositories.Interfaces;
 using Backend.Services.Interfaces;
 
@@ -62,5 +60,10 @@ public class UniversityService : IUniversityService
         await _universityRepository.AddUniversityAsync(university, ct);
         await _universityRepository.SaveChangesAsync(ct);
         return (true, "The university has been created");
+    }
+
+    public async Task<IEnumerable<ScienceClub>> GetActiveScienceClubsByUniversityAsync(string universityId, CancellationToken ct = default)
+    {
+        return await _scienceClubRepository.GetActiveClubsByUniversityId(universityId, ct);
     }
 }

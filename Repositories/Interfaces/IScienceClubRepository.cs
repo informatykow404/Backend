@@ -17,6 +17,6 @@ namespace Backend.Repositories.Interfaces
         void UpdateClubMember(ClubMember club);
         void Remove(ScienceClub club);
         Task<int> SaveChangesAsync(CancellationToken ct = default);
-        
+        Task<IEnumerable<ScienceClub>> GetActiveClubsByUniversityId(string universityId, CancellationToken ct = default);
     }
 }

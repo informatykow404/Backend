@@ -44,6 +44,13 @@ namespace Backend.Repositories.Implementations
                 .FirstOrDefaultAsync(c => c.Id == id, ct);
         }
 
+        public async Task<IEnumerable<ScienceClub>> GetActiveClubsByUniversityId(string universityId, CancellationToken ct = default)
+        {
+            return await _context.ScienceClubs
+                .Where(sc => sc.UniversityId == universityId && sc.status == ClubStatus.Active)
+                .ToListAsync(ct);
+        }
+
         public void Remove(ScienceClub club)
         {
             _context.Remove(club);

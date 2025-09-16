@@ -19,7 +19,6 @@ public class UniversityController : ControllerBase
     }
     
     [HttpGet("{id}")]
-    [Authorize(Roles = "University")]
     public async Task<IActionResult> GetPendingClubs([FromRoute] string id, CancellationToken ct = default)
     {
         var actionOutcome = await _universityRepository.GetPendingClubsAsync(id, ct);
@@ -27,7 +26,6 @@ public class UniversityController : ControllerBase
     }
     
     [HttpPatch("acceptClub/{id}")]
-    [Authorize(Roles = "University")]
     public async Task<IActionResult> AcceptClub([FromRoute] string id, AcceptDTO approval, CancellationToken ct = default)
     {
         var actionOutcome = await _universityRepository.AcceptClubAsync(id, approval, ct);
@@ -35,7 +33,14 @@ public class UniversityController : ControllerBase
             return Ok(actionOutcome.Item2);
         return BadRequest(actionOutcome.Item2);
     }
-    
+
+    [HttpGet("{id}/scienceClubs")]
+    public async Task<IActionResult> GetScienceClubs([FromRoute] string id, CancellationToken ct = default)
+    {
+        var actionOutcome = await _universityRepository.GetActiveScienceClubsByUniversityAsync(id, ct);
+        return Ok(actionOutcome);
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateUniversity(CreateUniDTO uniData, CancellationToken ct = default)
