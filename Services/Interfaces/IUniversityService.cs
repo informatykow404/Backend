@@ -9,4 +9,5 @@ public interface IUniversityService
     Task<(bool,string)> AcceptClubAsync(string id, AcceptDTO approval, CancellationToken ct = default);
     Task<(bool,string)> CreateUniversityAsync(CreateUniDTO uniData, CancellationToken ct = default);
     Task<(bool,string)> RemoveUniversityAsync(string id, CancellationToken ct = default);
+    Task<(bool,string)> UpdateUniversityAsync(string id, UpdateUniDTO uniData, CancellationToken ct = default);
 }

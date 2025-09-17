@@ -45,12 +45,23 @@ public class UniversityController : ControllerBase
             return Ok(actionOutcome.Item2);
         return BadRequest(actionOutcome.Item2);
     }
+
     /*TO DO*/
     [HttpDelete("{id}")]
     [Authorize]
     public async Task<IActionResult> RemoveUniversity([FromRoute] string id, CancellationToken ct = default)
     {
         var actionOutcome = await _universityRepository.RemoveUniversityAsync(id, ct);
+        if (actionOutcome.Item1)
+            return Ok(actionOutcome.Item2);
+        return BadRequest(actionOutcome.Item2);
+    }
+
+    [HttpPatch("{id}")]
+    [Authorize(Roles = "University")]
+    public async Task<IActionResult> UpdateUniversity([FromRoute] string id, UpdateUniDTO uniData, CancellationToken ct = default)
+    {
+        var actionOutcome = await _universityRepository.UpdateUniversityAsync(id, uniData, ct);
         if (actionOutcome.Item1)
             return Ok(actionOutcome.Item2);
         return BadRequest(actionOutcome.Item2);
