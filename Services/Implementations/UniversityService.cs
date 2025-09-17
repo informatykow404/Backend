@@ -1,4 +1,4 @@
-﻿using Backend.Data.Models;
+using Backend.Data.Models;
 using Backend.Data.Models.Enums;
 using Backend.DTOs.University;
 using Backend.Repositories.Interfaces;
@@ -65,5 +65,48 @@ public class UniversityService : IUniversityService
     public async Task<IEnumerable<ScienceClub>> GetActiveScienceClubsByUniversityAsync(string universityId, CancellationToken ct = default)
     {
         return await _scienceClubRepository.GetActiveClubsByUniversityId(universityId, ct);
+    }
+    
+
+    public async Task<(bool,string)> RemoveUniversityAsync(string id, CancellationToken ct = default)
+    {
+        var university = await _universityRepository.GetUniversityByIdAsync(id, ct);
+        if (university is null) return (false, "University not found");
+        var scienceClubs = university.Clubs;
+        foreach (var scienceClub in scienceClubs)
+            _scienceClubRepository.Remove(scienceClub);
+        _universityRepository.RemoveUniversity(university);
+        await _universityRepository.SaveChangesAsync(ct);
+        return (true, "Successfully removed the university");
+    }
+
+    public async Task<(bool,string)> UpdateUniversityAsync(string id, UpdateUniDTO uniData, CancellationToken ct = default)
+    {
+        University? uni = await _universityRepository.GetUniversityByNameAsync(uniData.Name, ct);
+        if (uni != null)
+            return (false, "University with the given name already exists. Please try again with a different name");
+        uni = await _universityRepository.GetUniversityByIdAsync(id, ct);
+        if (uni == null)
+            return (false, "Couldn't find the university with this Id");
+        string message = "";
+        if (!string.IsNullOrWhiteSpace(uniData.Description))
+        {
+            uni.Description = uniData.Description;
+            message += "Description updated. ";
+        }
+
+        if (!string.IsNullOrWhiteSpace(uniData.Location))
+        {
+            uni.Location = uniData.Location;
+            message += "Location updated. ";
+        }
+
+        if (!string.IsNullOrWhiteSpace(uniData.Name))
+        {
+            uni.Name = uniData.Name;
+            message += "Name updated. ";
+        }
+        await _universityRepository.SaveChangesAsync(ct);
+        return (true, message);
     }
 }

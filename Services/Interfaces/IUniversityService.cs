@@ -1,4 +1,4 @@
-﻿using Backend.Data.Models;
+using Backend.Data.Models;
 using Backend.DTOs.University;
 
 namespace Backend.Services.Interfaces;
@@ -9,4 +9,6 @@ public interface IUniversityService
     Task<(bool,string)> AcceptClubAsync(string id, AcceptDTO approval, CancellationToken ct = default);
     Task<(bool,string)> CreateUniversityAsync(CreateUniDTO uniData, CancellationToken ct = default);
     Task<IEnumerable<ScienceClub>> GetActiveScienceClubsByUniversityAsync(string universityId, CancellationToken ct = default);
+    Task<(bool,string)> RemoveUniversityAsync(string id, CancellationToken ct = default);
+    Task<(bool,string)> UpdateUniversityAsync(string id, UpdateUniDTO uniData, CancellationToken ct = default);
 }
