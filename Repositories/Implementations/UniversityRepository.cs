@@ -37,4 +37,9 @@ public class UniversityRepository : IUniversityRepository
             .Include(u => u.Clubs)
             .FirstOrDefaultAsync(c => c.Name == name, ct);
     }
+    
+    public void RemoveUniversity(University club)
+    {
+        _context.Remove(club);
+    }
 }
